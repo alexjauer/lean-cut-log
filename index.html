@@ -186,6 +186,13 @@ input[type="date"]{-webkit-appearance:none;appearance:none;display:block;min-hei
 input[type="date"]::-webkit-date-and-time-value{text-align:left}
 .wrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
 .wrow button{grid-column:1/-1;justify-self:start}
+.ss{border:2px solid var(--accent);border-radius:10px;padding:10px 12px;margin-block:6px;display:flex;flex-direction:column}
+.ss .ex{border-top:1px solid var(--line)}
+.ss .ex:first-of-type{border-top:0}
+.sshead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding-bottom:6px}
+.sshead b{font-family:var(--f-display);font-size:17px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.sshead .sub{flex-basis:100%;font-size:12.5px}
+.sshead .pair{background:var(--accent);color:var(--accent-ink)}
 .savebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toast{font-size:13px;color:var(--good);font-weight:600}
 .toast.err{color:var(--plate)}
@@ -456,21 +463,21 @@ const EX = {
   shortfoot:{n:"Towel scrunch / short foot (left)",k:"bw"}, bandankle:{n:"Banded ankle 4-way (left)",k:"bw"}, balance:{n:"Single-leg balance (left)",k:"time"}, tibraise:{n:"Tibialis wall raise",k:"bw"},
   plank:{n:"Plank",k:"time"}, sideplank:{n:"Side plank (per side)",k:"time"}, birddog:{n:"Bird dog (per side)",k:"bw"}, walk:{n:"Brisk walk",k:"min"},
   legpress:{n:"Leg press",k:"lift"}, pushdown:{n:"Rope triceps pushdown",k:"lift"}, revfly:{n:"Bent-over reverse fly",k:"lift"},
-  dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}
+  dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}, ezcurl:{n:"EZ-bar curl",k:"lift"}
 };
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
   mon:{t:"Mon", loc:"home", d:"Full Body A · home dumbbells", x:[["goblet",3,"12–15","A"],["pushup",3,"near failure","A"],["dbrdl",3,"12–15","B"],["row1",3,"12–15/arm","B"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["deadbug",3,"8/side","o"],["circuit",1,"max rounds","o"]],
-    alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"3 min"],["legpress",3,"10–12","A"],["chestpress",3,"10–12","A"],["dbrdl",3,"10–12","B"],["csrow",3,"10–12","B"],["dbcurl",3,"10–12","C"],["pushdown",3,"10–12","C"],["deadbug",3,"8/side","o"],["incwalk",1,"10 min","o"]]}},
-  tue:{t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"3 min"],["squat",3,"8–10"],["pullup",3,"6–10","A"],["shpress",3,"8–10","A"],["csrow",3,"10–12"],["inccurl",3,"10–12","C"],["ohcable",3,"10–12","C"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
-    alt:{loc:"home", d:"Full Body B · home dumbbells", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["revfly",3,"12–15"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
+    alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"3 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["dbcurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["deadbug",3,"8/side","o"],["incwalk",1,"10 min","o"]]}},
+  tue:{t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"3 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["shpress",3,"8–10","A"],["csrow",3,"10–12","A"],["inccurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
+    alt:{loc:"home", d:"Full Body B · home dumbbells", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["revfly",3,"12–15"],["dbcurl",3,"10–15","B"],["ohdb",3,"10–15","B"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
   wed:{t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000–10,000"]]},
-  thu:{t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"3 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["pulldown",3,"10–12","A"],["hammer",3,"8–12","B"],["cgbench",3,"8–12","B"],["cablecr",3,"12–15"],["run",1,"20 min +3–5/wk"],["calfse",2,"15","o"],["kneeraise",3,"10–12","o"]],
+  thu:{t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"3 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["hammer",3,"8–12","B"],["dbskull",3,"10–12","B"],["cablecr",3,"12–15"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["kneeraise",3,"10–12","o"]],
     alt:{loc:"home", d:"Full Body C · home dumbbells", x:[["heelwarm",1,"3 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["revcrunch",3,"10–15"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
-  fri:{t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"3 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12","A"],["row1",3,"10–12/arm","A"],["latraise",3,"12–15","B"],["facepull",2,"15","B"],["preacher",3,"10–12","C"],["skull",3,"10–12","C"],["intervals",1,"6–8 rounds","o"]],
+  fri:{t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"3 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
     alt:{loc:"home", d:"Full Body D · home dumbbells", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["row1",3,"12–15/arm","A"],["latraise",3,"15–20","B"],["revfly",2,"15","B"],["dbcurl",3,"10–15","C"],["dbskull",3,"12–15","C"],["circuit",1,"max rounds","o"]]}},
   sat:{t:"Sat", loc:"home", d:"Arms + core · home dumbbells", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["floorpress",3,"15–20","B"],["latraise",3,"15–20"],["plank",3,"30–45 sec"],["sideplank",2,"30 sec","o"],["birddog",2,"8/side","o"],["walk",1,"20–30 min","o"]],
-    alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohcable",3,"10–12","A"],["hammer",3,"10–12","B"],["pushdown",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
+    alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
   sun:{t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000+"],["walk",1,"20 min, easy","o"]]}
 };
 const KUNIT = {steps:["steps"],lift:["lb","reps"],bw:["reps"],time:["sec"],min:["min"],rounds:["rounds"]};
@@ -489,6 +496,7 @@ const fmt = (n, d=0) => n == null ? "–" : (Math.round(n*10**d)/10**d).toLocale
 
 /* ---------- Form notes (from the Exercise routine tab) ---------- */
 const FORM = {
+  ezcurl:["Stand tall holding an EZ bar on the angled grips, palms up, arms straight. Curl it toward your shoulders without your elbows moving forward, squeeze, lower over 3 seconds.","Superset it with skull crushers on a nearby bench using the same bar, so you never switch equipment.","No leaning back or swinging. If you have to rock to finish a rep, the set is over."],
   legpress:["Sit with your back flat on the pad, feet shoulder-width in the middle of the platform. Lower until your knees reach about 90°, then press back up without locking them.","Control the lowering. A full, deep range grows quads and glutes more than heavy partial reps.","Keep your lower back on the pad; if it lifts, you've gone too deep. Push through the whole foot, and if your left heel complains, shift the pressure slightly toward the midfoot."],
   pushdown:["Rope on a high cable. Pin your elbows to your sides, push the rope down until your arms are straight, spreading the ends apart at the bottom. Let it rise to about chest height.","Squeeze hard at the bottom for a second; only your forearms move.","Don't lean over the rope or let your elbows drift forward. Go lighter if your shoulders take over."],
   revfly:["Hinge forward until your chest is nearly parallel to the floor, or rest your chest on an incline bench. Let light dumbbells hang below you, elbows slightly bent. Raise your arms out to the sides, squeeze your shoulder blades, lower slowly.","Builds rear delts and upper back, the same job the face pull does at the gym.","Light weight only. Keep your neck long and eyes on the floor; no swinging."],
@@ -553,7 +561,7 @@ function formHtml(k){
 
 /* ---------- Target muscles ---------- */
 const MUSCLE = {
-  legpress:"Quads · Glutes", pushdown:"Triceps", revfly:"Rear delts · Upper back", dbfloor:"Chest · Triceps", dbskull:"Triceps", revcrunch:"Lower abs",
+  ezcurl:"Biceps",   legpress:"Quads · Glutes", pushdown:"Triceps", revfly:"Rear delts · Upper back", dbfloor:"Chest · Triceps", dbskull:"Triceps", revcrunch:"Lower abs",
   goblet:"Quads · Glutes · Core", dbrdl:"Hamstrings · Glutes · Lower back", pushup:"Chest · Triceps · Front delts",
   row1:"Lats · Upper back · Biceps", dbcurl:"Biceps", ohdb:"Triceps (long head)", deadbug:"Deep core · Abs",
   circuit:"Full body · Conditioning", pullup:"Lats · Upper back · Biceps", squat:"Quads · Glutes · Adductors",
@@ -790,7 +798,7 @@ function exCard(it){
     ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max, so add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
   return `<div class="ex ${allDone?"exdone":""}">
-      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${allDone?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span></div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
+      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${allDone?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span></div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}</div>
       <div class="sets ${u.length===1?"one":""}">${rows}</div>
@@ -801,9 +809,20 @@ function renderExList(){
   const openSet = new Set([...document.querySelectorAll("#exList details[open]")].map(d => d.id));
   const p = plan(), ess = p.x.filter(it => !isOpt(it)), opt = p.x.filter(isOpt);
   const hasPairs = p.x.some(it => pairOf(it));
-  $("#exList").innerHTML = (hasPairs ? `<p class="sub pairnote">Exercises with the same letter are a superset: do a set of one, then a set of the other, then rest about 60 seconds. It cuts the workout time a lot.</p>` : "") +
-    ess.map(exCard).join("") +
-    (opt.length ? `<div class="opthead"><h3>If you have time</h3><span class="sub">~${r5(opt.reduce((a,it) => a + itemMin(it), 0))} min · fine to skip on busy days</span></div>` + opt.map(exCard).join("") : "");
+  // Group consecutive same-letter exercises into a superset box; number them A1, A2.
+  const group = list => {
+    let out = "", i = 0;
+    while (i < list.length) {
+      const L = pairOf(list[i]);
+      if (!L) { out += exCard(list[i]); i++; continue; }
+      const g = []; while (i < list.length && pairOf(list[i]) === L) { g.push(Object.assign(list[i].slice(), {_n: g.length + 1})); i++; }
+      out += `<div class="ss"><div class="sshead"><span class="pair">${L}</span><b>Superset ${L}</b><span class="sub">One set of each, back to back, then rest ~60 sec. Repeat for every set.</span></div>${g.map(exCard).join("")}</div>`;
+    }
+    return out;
+  };
+  $("#exList").innerHTML = (hasPairs ? `<p class="sub pairnote">Boxed exercises are supersets: alternate between the two, then rest. Letters only show the order (A, then B). Everything else is done on its own with normal rest.</p>` : "") +
+    group(ess) +
+    (opt.length ? `<div class="opthead"><h3>If you have time</h3><span class="sub">~${r5(opt.reduce((a,it) => a + itemMin(it), 0))} min · fine to skip on busy days</span></div>` + group(opt) : "");
   openSet.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
   const doneEss = ess.filter(([k]) => done[k].length && done[k].every(Boolean)).length;
   const chip = $("#doneChip"); if (chip) { chip.textContent = `${doneEss} of ${ess.length} essentials done`; chip.classList.toggle("alldone", doneEss === ess.length); }
