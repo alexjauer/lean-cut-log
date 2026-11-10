@@ -1,0 +1,29 @@
+{
+ "name": "Lean Cut Log",
+ "short_name": "Lean Cut",
+ "description": "Workouts, food, water and body tracking for the Lean Cut Plan.",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#eef1f5",
+ "theme_color": "#1f4fbf",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
