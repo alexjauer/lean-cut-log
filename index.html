@@ -212,6 +212,10 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left}
 .prtoast.show{animation:prin .35s ease-out}
 @keyframes prin{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
 @media (prefers-reduced-motion:reduce){.prtoast.show{animation:none}}
+.swapnote{font-size:12px;color:var(--accent);font-weight:600}
+.swapbox{display:flex;flex-direction:column;gap:6px;background:var(--sunk);border-radius:8px;padding:10px}
+.swapbox button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;font-weight:500;width:100%}
+.swapbox .sub{font-size:12px}
 .savebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toast{font-size:13px;color:var(--good);font-weight:600}
 .toast.err{color:var(--plate)}
@@ -484,7 +488,21 @@ const EX = {
   shortfoot:{n:"Towel scrunch / short foot (left)",k:"bw"}, bandankle:{n:"Banded ankle 4-way (left)",k:"bw"}, balance:{n:"Single-leg balance (left)",k:"time"}, tibraise:{n:"Tibialis wall raise",k:"bw"},
   plank:{n:"Plank",k:"time"}, sideplank:{n:"Side plank (per side)",k:"time"}, birddog:{n:"Bird dog (per side)",k:"bw"}, walk:{n:"Brisk walk",k:"min"},
   legpress:{n:"Leg press",k:"lift"}, pushdown:{n:"Rope triceps pushdown",k:"lift"}, revfly:{n:"Bent-over reverse fly",k:"lift"},
-  dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}, ezcurl:{n:"EZ-bar curl",k:"lift"}
+  dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}, ezcurl:{n:"EZ-bar curl",k:"lift"},
+  hipthrust:{n:"Barbell hip thrust",k:"lift"}, legcurl:{n:"Leg curl (lying or seated)",k:"lift"}, lunge:{n:"Dumbbell walking lunge",k:"lift"},
+  cablerow:{n:"Seated cable row",k:"lift"}, mshpress:{n:"Machine shoulder press",k:"lift"}, incpress:{n:"Incline dumbbell press",k:"lift"}, bike:{n:"Stationary bike",k:"min"}
+};
+// Swap options when equipment is taken: same movement pattern, same main muscles.
+const ALTS = {
+  squat:["legpress","goblet","bss"], legpress:["squat","goblet","bss"], goblet:["legpress","bss","squat"], bss:["lunge","legpress","goblet"], lunge:["bss","goblet"],
+  trapdl:["dbrdl","hipthrust","legpress"], dbrdl:["hipthrust","legcurl","trapdl"], hipthrust:["dbrdl","legcurl"], legcurl:["dbrdl","hipthrust"],
+  pullup:["pulldown","cablerow"], pulldown:["pullup","cablerow"], csrow:["row1","cablerow"], row1:["csrow","cablerow"], cablerow:["row1","csrow"],
+  revfly:["facepull"], facepull:["revfly"], shpress:["mshpress"], mshpress:["shpress"],
+  dbbench:["chestpress","incpress","pushup"], chestpress:["dbbench","incpress","pushup"], incpress:["dbbench","chestpress"], dbfloor:["pushup","dbbench"], pushup:["dbfloor","chestpress"],
+  inccurl:["dbcurl","ezcurl","preacher"], dbcurl:["inccurl","ezcurl","hammer"], ezcurl:["dbcurl","preacher","inccurl"], preacher:["ezcurl","dbcurl"], hammer:["dbcurl","ezcurl"],
+  ohdb:["ohcable","pushdown","dbskull"], ohcable:["ohdb","pushdown"], pushdown:["ohcable","ohdb","dbskull"], dbskull:["skull","ohdb","pushdown"], skull:["dbskull","ohdb","pushdown"], cgbench:["dbskull","pushdown"], floorpress:["dbskull","pushup"],
+  cablecr:["revcrunch","kneeraise","deadbug"], kneeraise:["revcrunch","deadbug"], revcrunch:["deadbug","kneeraise"], deadbug:["revcrunch","birddog"],
+  calfst:["calfse"], calfse:["calfst"], run:["bike"], incwalk:["bike","walk"], intervals:["bike"]
 };
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
@@ -517,6 +535,13 @@ const fmt = (n, d=0) => n == null ? "–" : (Math.round(n*10**d)/10**d).toLocale
 
 /* ---------- Form notes (from the Exercise routine tab) ---------- */
 const FORM = {
+  hipthrust:["Sit with your upper back against the edge of a bench, a padded barbell across your hips, feet flat and shoulder-width. Drive your hips up until your body is straight from knees to shoulders, squeeze your glutes for a second, lower.","Chin tucked and ribs down; push through your heels to keep the work in your glutes.","Don't arch your lower back at the top. Use the bar pad. If your left heel is sore, push through the whole foot."],
+  legcurl:["Pad just above your heels, knees lined up with the machine's pivot. Curl your heels toward your glutes, pause, lower slowly.","Point your toes up toward your shins; the full straight-leg stretch at the bottom matters.","Keep your hips down on the pad (lying) or the thigh pad snug (seated). No bouncing."],
+  lunge:["Hold a dumbbell in each hand. Step forward, lower until your back knee nearly touches the floor, then push through the front heel and step into the next lunge.","Long steps load the glutes more; shorter steps load the quads more.","Front knee tracks over your toes. Lunges land hard on the front heel, so go easy on your left side; switch to split squats if it aches."],
+  cablerow:["Sit with your feet on the platform, knees slightly bent, back tall. Pull the handle to your lower ribs, squeezing your shoulder blades, then let your arms straighten fully.","Pause a second at your ribs and let your shoulders stretch forward at the end of each rep.","Don't rock your torso to move the weight. Neck long, eyes forward."],
+  mshpress:["Set the seat so the handles start at shoulder height. Press up until your arms are nearly straight, lower under control.","Stable, so it's easy to push close to failure safely.","Keep your back on the pad and ribs down; don't shrug at the top."],
+  incpress:["Bench at about 30°, dumbbells at the outside of your chest. Press up and slightly in, lower to a deep stretch.","Targets the upper chest, which fills out the area under your collarbones.","Shoulder blades pinned, elbows about 45° from your body."],
+  bike:["Seat high enough that your knee is slightly bent at the bottom of each pedal stroke. Pedal at an easy, conversational pace, or use the same fast/easy pattern as the treadmill intervals.","Builds the same aerobic fitness as running, with no impact, which is easy on your heel.","Push through the ball of the foot, not the heel."],
   ezcurl:["Stand tall holding an EZ bar on the angled grips, palms up, arms straight. Curl it toward your shoulders without your elbows moving forward, squeeze, lower over 3 seconds.","Superset it with skull crushers on a nearby bench using the same bar, so you never switch equipment.","No leaning back or swinging. If you have to rock to finish a rep, the set is over."],
   legpress:["Sit with your back flat on the pad, feet shoulder-width in the middle of the platform. Lower until your knees reach about 90°, then press back up without locking them.","Control the lowering. A full, deep range grows quads and glutes more than heavy partial reps.","Keep your lower back on the pad; if it lifts, you've gone too deep. Push through the whole foot, and if your left heel complains, shift the pressure slightly toward the midfoot."],
   pushdown:["Rope on a high cable. Pin your elbows to your sides, push the rope down until your arms are straight, spreading the ends apart at the bottom. Let it rise to about chest height.","Squeeze hard at the bottom for a second; only your forearms move.","Don't lean over the rope or let your elbows drift forward. Go lighter if your shoulders take over."],
@@ -582,6 +607,7 @@ function formHtml(k){
 
 /* ---------- Target muscles ---------- */
 const MUSCLE = {
+  hipthrust:"Glutes · Hamstrings", legcurl:"Hamstrings", lunge:"Quads · Glutes", cablerow:"Upper back · Lats · Biceps", mshpress:"Shoulders · Triceps", incpress:"Upper chest · Shoulders · Triceps", bike:"Aerobic base · Legs",
   ezcurl:"Biceps",   legpress:"Quads · Glutes", pushdown:"Triceps", revfly:"Rear delts · Upper back", dbfloor:"Chest · Triceps", dbskull:"Triceps", revcrunch:"Lower abs",
   goblet:"Quads · Glutes · Core", dbrdl:"Hamstrings · Glutes · Lower back", pushup:"Chest · Triceps · Front delts",
   row1:"Lats · Upper back · Biceps", dbcurl:"Biceps", ohdb:"Triceps (long head)", deadbug:"Deep core · Abs",
@@ -692,11 +718,14 @@ const LOCNAME = {gym:"Gym", home:"Home", rest:"Recovery"};
 const sessionLoc = s => s.loc || (DAYS[s.day] ? DAYS[s.day].loc : "gym");
 function plan(day = curDay, loc = curLoc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
 const isOpt = it => /o/.test(it[3] || "");
+let swaps = {}, swapOpen = null;
+const itemsOf = (p, sw) => p.x.map(it => sw && sw[it[0]] && EX[sw[it[0]]] ? [sw[it[0]], it[1], it[2], it[3] || "", it[0]] : it);
+const items = () => itemsOf(plan(), swaps);
 const pairOf = it => (it[3] || "").replace(/o/g, "");
 
 /* unsaved work is kept on this device until you save */
 const DK = () => "leancut-draft-" + sid() + "-" + plan().loc;
-function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({sets:draft, done, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
+function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({sets:draft, done, swaps, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
 function draftLoad(){ try { return JSON.parse(localStorage.getItem(DK()) || "null"); } catch(e){ return null; } }
 function draftClear(){ try { Object.keys(localStorage).filter(k => k.startsWith("leancut-draft-" + sid())).forEach(k => localStorage.removeItem(k)); } catch(e){} }
 function markDirty(){ dirty = true; draftSave(); }
@@ -767,7 +796,8 @@ function buildDraft(){
   const local = draftLoad();
   const useLocal = !!(local && local.sets && (!savedHere || local.t > (savedHere.savedAt || 0)));
   draft = {}; done = {}; hints = {}; prevBest = {};
-  p.x.forEach(([k,n]) => {
+  const src = useLocal ? local : savedHere; swaps = src && src.swaps ? {...src.swaps} : {};
+  itemsOf(p, swaps).forEach(([k,n]) => {
     const w = KUNIT[EX[k].k].length;
     const have = useLocal ? local.sets[k] : savedHere && savedHere.sets && savedHere.sets[k];
     draft[k] = have ? have.map(r => r.slice()) : Array.from({length:n}, () => Array(w).fill(""));
@@ -818,6 +848,8 @@ function exInput(k, i, j, v){
 }
 function exCard(it){
   const [k,n,target] = it, e = EX[k], u = KUNIT[e.k], last = lastFor(k, curDate), up = upInfo(k, n, target), pair = pairOf(it);
+  const base = it[4] || k, choices = [...(it[4] ? [base] : []), ...(ALTS[base] || [])].filter(a => a !== k && EX[a]);
+  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Do this instead</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
   const allDone = done[k].length > 0 && done[k].every(Boolean);
   const anyPR = draft[k].some((r,i) => isPR(k, i));
   const rows = draft[k].map((r,i) => `<span class="n ${done[k][i]?"ok":""} ${isPR(k,i)?"pr":""}" ${isPR(k,i)?'title="Personal record"':""}>${isPR(k,i) ? "★" : i+1}</span>` + r.map((v,j) => exInput(k,i,j,v)).join("") +
@@ -826,17 +858,18 @@ function exCard(it){
     ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max, so add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
   return `<div class="ex ${allDone?"exdone":""}" data-ex="${k}">
-      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span></div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
+      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ Swapped in for ${esc(EX[it[4]].n)}</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
       <div class="sets ${u.length===1?"one":""}">${rows}</div>
-      <div class="ex-foot"><button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
+      ${swapHtml}
+      <div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
     </div>`;
 }
 function renderExList(){
   const openSet = new Set([...document.querySelectorAll("#exList details[open]")].map(d => d.id));
-  const p = plan(), ess = p.x.filter(it => !isOpt(it)), opt = p.x.filter(isOpt);
-  const hasPairs = p.x.some(it => pairOf(it));
+  const its = items(), ess = its.filter(it => !isOpt(it)), opt = its.filter(isOpt);
+  const hasPairs = its.some(it => pairOf(it));
   // Group consecutive same-letter exercises into a superset box; number them A1, A2.
   const group = list => {
     let out = "", i = 0;
@@ -888,7 +921,7 @@ $("#exList").addEventListener("input", e => {
 });
 function fillSet(k, i){
   const kind = EX[k].k, r = draft[k][i], h = hints[k] && hints[k][i];
-  const it = plan().x.find(x => x[0] === k), tnum = (String(it ? it[2] : "").match(/\d+/) || [])[0];
+  const it = items().find(x => x[0] === k), tnum = (String(it ? it[2] : "").match(/\d+/) || [])[0];
   r.forEach((v,j) => {
     if (v !== "" && v != null) return;
     if (kind === "lift" && j === 0) { if (h && h[0] !== "" && h[0] != null) r[0] = h[0]; return; }
@@ -906,6 +939,8 @@ $("#exList").addEventListener("click", e => {
   let finished = null, ticked = false;
   if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) { ticked = true; if (done[k].every(Boolean)) finished = k; } }
   else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) { ticked = true; finished = k; } }
+  else if (d.swap) { swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
+  else if (d.pick) { if (d.alt === d.pick) delete swaps[d.pick]; else swaps[d.pick] = d.alt; swapOpen = null; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); return; }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
   else if (d.add) { const k = d.add, prev = draft[k][draft[k].length-1]; draft[k].push(prev.slice()); done[k].push(false); }
   else if (d.rm) { draft[d.rm].pop(); done[d.rm].pop(); }
@@ -917,7 +952,7 @@ $("#exList").addEventListener("click", e => {
   if (ticked) feedback(pr ? "pr" : !!finished);
   if (finished || pr) celebrate(kk, rect.left + rect.width/2, rect.top + rect.height/2, !essBefore && essentialsDone(), pr);
 });
-function essentialsDone(){ return plan().x.filter(it => !isOpt(it)).every(([k]) => done[k] && done[k].length && done[k].every(Boolean)); }
+function essentialsDone(){ return items().filter(it => !isOpt(it)).every(([k]) => done[k] && done[k].length && done[k].every(Boolean)); }
 
 /* ---------- celebration: confetti when an exercise (or the whole day) is done ---------- */
 function confetti(x, y, n, spread){
@@ -971,7 +1006,7 @@ $("#saveBtn").addEventListener("click", async () => {
   if (minutes == null && tm && tm.date === curDate) minutes = Math.max(1, Math.round((Date.now() - tm.start)/60000));
   $("#saveBtn").disabled = true;
   try {
-    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, minutes: minutes ?? "", savedAt:Date.now()});
+    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, minutes: minutes ?? "", savedAt:Date.now()});
     if (tm && tm.date === curDate) timerSet(null);
     draftClear(); dirty = false; toast($("#logToast"), minutes ? `Saved · ${minutes} min` : "Saved"); renderLog(); renderTimer();
   }
@@ -1606,7 +1641,7 @@ function weekReport(mon){
     const p = plan(s.day, sessionLoc(s));
     Object.entries(s.sets || {}).forEach(([k, sets]) => {
       if (!EX[k] || EX[k].k !== "lift" || k === "pullup") return;
-      const it = p.x.find(x => x[0] === k), top = it ? rangeTop(it[2]) : null;
+      const it = itemsOf(p, s.swaps).find(x => x[0] === k), top = it ? rangeTop(it[2]) : null;
       const reps = sets.map(r => num(r[1])).filter(v => v != null);
       if (top && reps.length >= Math.min(it[1], 3) && reps.every(r => r >= top) && !ready.includes(k)) ready.push(k);
     });
