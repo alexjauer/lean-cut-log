@@ -197,6 +197,11 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left}
 .fbrow .label{margin-right:4px}
 .fbrow button{padding:5px 12px;font-size:13px}
 .fbrow button[aria-pressed="false"]{color:var(--muted)}
+.confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:60}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.025);box-shadow:0 0 0 3px var(--good)}100%{transform:scale(1);box-shadow:0 0 0 0 transparent}}
+.ex.pop{animation:pop .6s ease-out;border-radius:8px}
+.donechip.pop{animation:pop .6s ease-out}
+@media (prefers-reduced-motion:reduce){.ex.pop,.donechip.pop{animation:none}}
 .savebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toast{font-size:13px;color:var(--good);font-weight:600}
 .toast.err{color:var(--plate)}
@@ -802,7 +807,7 @@ function exCard(it){
   const upHtml = !up ? "" : up.max
     ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max, so add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
-  return `<div class="ex ${allDone?"exdone":""}">
+  return `<div class="ex ${allDone?"exdone":""}" data-ex="${k}">
       <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${allDone?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span></div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}</div>
@@ -878,16 +883,49 @@ function fillSet(k, i){
 }
 $("#exList").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  const d = b.dataset;
-  if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) feedback(done[k].every(Boolean)); }
-  else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) feedback(true); }
+  const d = b.dataset, rect = b.getBoundingClientRect(), essBefore = essentialsDone();
+  let finished = null;
+  if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) { const full = done[k].every(Boolean); feedback(full); if (full) finished = k; } }
+  else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) { feedback(true); finished = k; } }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
   else if (d.add) { const k = d.add, prev = draft[k][draft[k].length-1]; draft[k].push(prev.slice()); done[k].push(false); }
   else if (d.rm) { draft[d.rm].pop(); done[d.rm].pop(); }
   else if (d.copy) { const k = d.copy, l = lastFor(k, curDate); if (l) { draft[k] = l.sets.map(r => r.map(v => v ?? "")); done[k] = draft[k].map(() => false); } }
   else return;
   markDirty(); renderExList();
+  if (finished) celebrate(finished, rect.left + rect.width/2, rect.top + rect.height/2, !essBefore && essentialsDone());
 });
+function essentialsDone(){ return plan().x.filter(it => !isOpt(it)).every(([k]) => done[k] && done[k].length && done[k].every(Boolean)); }
+
+/* ---------- celebration: confetti when an exercise (or the whole day) is done ---------- */
+function confetti(x, y, n, spread){
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const cv = document.createElement("canvas"), dpr = window.devicePixelRatio || 1, W = innerWidth, H = innerHeight;
+  cv.className = "confetti"; cv.width = W * dpr; cv.height = H * dpr; document.body.appendChild(cv);
+  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr);
+  const cs = getComputedStyle(document.documentElement);
+  const cols = ["--accent","--good","--plate","--carb","--fat"].map(v => cs.getPropertyValue(v).trim() || "#1f4fbf");
+  const ps = Array.from({length:n}, (_, i) => {
+    const a = -Math.PI/2 + (Math.random() - 0.5) * spread, sp = 6 + Math.random() * 8;
+    return {x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: Math.random() * 3, vr: (Math.random() - 0.5) * 0.4, w: 5 + Math.random() * 5, h: 3 + Math.random() * 4, c: cols.at(i % cols.length)};
+  });
+  const t0 = performance.now(), life = 1500;
+  (function frame(t){
+    const el = t - t0; ctx.clearRect(0, 0, W, H);
+    ps.forEach(p => { p.vy += 0.28; p.vx *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = Math.max(0, 1 - el / life); ctx.fillStyle = p.c; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore(); });
+    if (el < life) requestAnimationFrame(frame); else cv.remove();
+  })(t0);
+}
+function celebrate(k, x, y, allDay){
+  const card = document.querySelector(`.ex[data-ex="${k}"]`);
+  if (card) { card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop"); }
+  confetti(x, y, 45, Math.PI * 0.8);
+  if (allDay) {
+    setTimeout(() => { confetti(innerWidth * 0.2, innerHeight * 0.55, 90, Math.PI * 0.6); confetti(innerWidth * 0.8, innerHeight * 0.55, 90, Math.PI * 0.6); feedback(true); }, 350);
+    const chip = $("#doneChip"); if (chip) { chip.textContent = "All essentials done! 🎉"; chip.classList.add("pop"); }
+  }
+}
 function toast(el, msg, err){ el.textContent = msg; el.classList.toggle("err", !!err); clearTimeout(el._t); el._t = setTimeout(() => el.textContent = "", 3500); }
 $("#saveBtn").addEventListener("click", async () => {
   const sets = {}, doneOut = {};
