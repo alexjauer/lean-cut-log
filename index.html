@@ -202,6 +202,16 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left}
 .ex.pop{animation:pop .6s ease-out;border-radius:8px}
 .donechip.pop{animation:pop .6s ease-out}
 @media (prefers-reduced-motion:reduce){.ex.pop,.donechip.pop{animation:none}}
+.sets .n.pr{color:var(--carb);font-size:15px}
+.prtag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--carb);vertical-align:2px}
+.prstar{color:var(--carb)}
+.stat .v.vs{font-size:16px;line-height:1.25}
+.prtoast{pointer-events:none;position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 64px);transform:translateX(-50%);z-index:70;max-width:calc(100vw - 32px);background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 16px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.25);text-align:center}
+.prtoast b{color:var(--carb);margin-right:4px}
+.prtoast span{opacity:.75}
+.prtoast.show{animation:prin .35s ease-out}
+@keyframes prin{from{opacity:0;transform:translate(-50%,-12px)}to{opacity:1;transform:translate(-50%,0)}}
+@media (prefers-reduced-motion:reduce){.prtoast.show{animation:none}}
 .savebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toast{font-size:13px;color:var(--good);font-weight:600}
 .toast.err{color:var(--plate)}
@@ -250,6 +260,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
 </head>
 <body>
 
+<div class="prtoast" id="prToast" role="status" hidden></div>
 <header><div class="wrap"><h1>Lean Cut <span>Log</span></h1><div class="sync" id="sync">Connecting…</div></div></header>
 
 <main>
@@ -744,13 +755,18 @@ function upInfo(k, n, target){
   return {w, next: w + inc};
 }
 
-let hints = {};
+let hints = {}, prevBest = {};
+function isPR(k, i){
+  if (PR_SKIP.includes(k) || !prevBest[k] || !done[k] || !done[k][i]) return false;
+  return better(setScore(k, draft[k][i], curDate), prevBest[k]);
+}
+function sessionBestDone(k){ let b = null; (draft[k] || []).forEach((r,i) => { if (!done[k][i]) return; const s = setScore(k, r, curDate); if (better(s, b)) b = s; }); return b; }
 function buildDraft(){
   const p = plan(), saved = state.sessions[sid()];
   const savedHere = saved && sessionLoc(saved) === p.loc ? saved : null;
   const local = draftLoad();
   const useLocal = !!(local && local.sets && (!savedHere || local.t > (savedHere.savedAt || 0)));
-  draft = {}; done = {}; hints = {};
+  draft = {}; done = {}; hints = {}; prevBest = {};
   p.x.forEach(([k,n]) => {
     const w = KUNIT[EX[k].k].length;
     const have = useLocal ? local.sets[k] : savedHere && savedHere.sets && savedHere.sets[k];
@@ -758,6 +774,7 @@ function buildDraft(){
     const hd = useLocal ? local.done && local.done[k] : savedHere && savedHere.done && savedHere.done[k];
     done[k] = draft[k].map((r,i) => hd ? !!hd[i] : !!(savedHere && !useLocal && have && r.some(v => v !== "" && v != null)));
     hints[k] = [];
+    if (!PR_SKIP.includes(k)) prevBest[k] = bestBefore(k, curDate, sid());
     const last = lastFor(k, curDate);
     if (last) {
       const lr = last.sets.filter(r => r.some(v => v !== "" && v != null));
@@ -802,15 +819,16 @@ function exInput(k, i, j, v){
 function exCard(it){
   const [k,n,target] = it, e = EX[k], u = KUNIT[e.k], last = lastFor(k, curDate), up = upInfo(k, n, target), pair = pairOf(it);
   const allDone = done[k].length > 0 && done[k].every(Boolean);
-  const rows = draft[k].map((r,i) => `<span class="n ${done[k][i]?"ok":""}">${i+1}</span>` + r.map((v,j) => exInput(k,i,j,v)).join("") +
+  const anyPR = draft[k].some((r,i) => isPR(k, i));
+  const rows = draft[k].map((r,i) => `<span class="n ${done[k][i]?"ok":""} ${isPR(k,i)?"pr":""}" ${isPR(k,i)?'title="Personal record"':""}>${isPR(k,i) ? "★" : i+1}</span>` + r.map((v,j) => exInput(k,i,j,v)).join("") +
     `<button type="button" class="chk" data-chk="${k}" data-i="${i}" aria-pressed="${!!done[k][i]}" aria-label="Mark ${esc(e.n)} set ${i+1} done">✓</button>`).join("");
   const upHtml = !up ? "" : up.max
     ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max, so add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
   return `<div class="ex ${allDone?"exdone":""}" data-ex="${k}">
-      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${allDone?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span></div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
+      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span></div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
-      <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}</div>
+      <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
       <div class="sets ${u.length===1?"one":""}">${rows}</div>
       <div class="ex-foot"><button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
     </div>`;
@@ -884,16 +902,20 @@ function fillSet(k, i){
 $("#exList").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   const d = b.dataset, rect = b.getBoundingClientRect(), essBefore = essentialsDone();
-  let finished = null;
-  if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) { const full = done[k].every(Boolean); feedback(full); if (full) finished = k; } }
-  else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) { feedback(true); finished = k; } }
+  const kk = d.chk || d.all, bestBeforeTap = kk ? sessionBestDone(kk) : null;
+  let finished = null, ticked = false;
+  if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) { ticked = true; if (done[k].every(Boolean)) finished = k; } }
+  else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) { ticked = true; finished = k; } }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
   else if (d.add) { const k = d.add, prev = draft[k][draft[k].length-1]; draft[k].push(prev.slice()); done[k].push(false); }
   else if (d.rm) { draft[d.rm].pop(); done[d.rm].pop(); }
   else if (d.copy) { const k = d.copy, l = lastFor(k, curDate); if (l) { draft[k] = l.sets.map(r => r.map(v => v ?? "")); done[k] = draft[k].map(() => false); } }
   else return;
+  let pr = null;
+  if (ticked && !PR_SKIP.includes(kk) && prevBest[kk]) { const now = sessionBestDone(kk); if (better(now, prevBest[kk]) && better(now, bestBeforeTap)) pr = now; }
   markDirty(); renderExList();
-  if (finished) celebrate(finished, rect.left + rect.width/2, rect.top + rect.height/2, !essBefore && essentialsDone());
+  if (ticked) feedback(pr ? "pr" : !!finished);
+  if (finished || pr) celebrate(kk, rect.left + rect.width/2, rect.top + rect.height/2, !essBefore && essentialsDone(), pr);
 });
 function essentialsDone(){ return plan().x.filter(it => !isOpt(it)).every(([k]) => done[k] && done[k].length && done[k].every(Boolean)); }
 
@@ -917,10 +939,16 @@ function confetti(x, y, n, spread){
     if (el < life) requestAnimationFrame(frame); else cv.remove();
   })(t0);
 }
-function celebrate(k, x, y, allDay){
+function celebrate(k, x, y, allDay, pr){
   const card = document.querySelector(`.ex[data-ex="${k}"]`);
   if (card) { card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop"); }
-  confetti(x, y, 45, Math.PI * 0.8);
+  confetti(x, y, pr ? 90 : 45, Math.PI * (pr ? 1 : 0.8));
+  if (pr) {
+    const t = $("#prToast"), gain = gainText(prevBest[k], pr);
+    t.innerHTML = `<b>★ New PR</b> ${esc(EX[k].n)}: ${esc(scoreText(k, pr))}${gain ? ` <span>(${esc(gain)})</span>` : ""}`;
+    t.hidden = false; t.classList.remove("show"); void t.offsetWidth; t.classList.add("show");
+    clearTimeout(t._h); t._h = setTimeout(() => { t.hidden = true; }, 3800);
+  }
   if (allDay) {
     setTimeout(() => { confetti(innerWidth * 0.2, innerHeight * 0.55, 90, Math.PI * 0.6); confetti(innerWidth * 0.8, innerHeight * 0.55, 90, Math.PI * 0.6); feedback(true); }, 350);
     const chip = $("#doneChip"); if (chip) { chip.textContent = "All essentials done! 🎉"; chip.classList.add("pop"); }
@@ -1018,56 +1046,113 @@ function niceStep(raw){ const p = 10 ** Math.floor(Math.log10(raw || 1)); const 
 
 /* ---------- PROGRESS ---------- */
 let curEx = null;
+/* ---------- progress scoring: estimated 1-rep max, reps, or time ---------- */
+// e1RM = weight × (1 + reps ÷ 30). Bodyweight moves score by reps; assisted pull-ups use body weight minus the assist.
+const PR_SKIP = ["heelwarm","mobility","walk","steps","incwalk","intervals","calfstretch","anklealpha","shortfoot","bandankle","balance","tibraise","chintuck"];
+const MODE_UNIT = {reps:"reps", sec:"sec", min:"min", rounds:"rounds"};
+function bwOn(date){
+  const w = Object.values(state.weights).filter(x => x.date <= date && num(x.lb) != null).sort((a,b) => b.date.localeCompare(a.date))[0];
+  return w ? num(w.lb) : START_W;
+}
+function setScore(k, r, date){
+  const kind = EX[k].k, a = num(r[0]), b = num(r[1]);
+  if (kind === "lift") {
+    if (b == null || b <= 0) return null;
+    if (k === "pullup") { const load = Math.max(0, bwOn(date) - (a || 0)); return {v: load * (1 + b/30), mode:"e1rm", load, reps:b, row:r}; }
+    if (!a) return {v:b, mode:"reps", reps:b, row:r};
+    return {v: a * (1 + b/30), mode:"e1rm", load:a, reps:b, row:r};
+  }
+  if (a == null || a <= 0) return null;
+  return {v:a, mode: kind === "bw" ? "reps" : kind === "time" ? "sec" : kind === "min" ? "min" : kind === "rounds" ? "rounds" : kind, reps:a, row:r};
+}
+// Any added weight beats bodyweight-only; otherwise the higher score wins.
+function better(x, y){
+  if (!x) return false; if (!y) return true;
+  const rx = x.mode === "e1rm" ? 1 : 0, ry = y.mode === "e1rm" ? 1 : 0;
+  return rx !== ry ? rx > ry : x.v > y.v + 1e-9;
+}
+function bestOf(k, sets, date){ let b = null; (sets || []).forEach(r => { const s = setScore(k, r, date); if (better(s, b)) b = s; }); return b; }
+function bestBefore(k, date, excludeId){
+  let b = null;
+  Object.entries(state.sessions).forEach(([id, s]) => {
+    if (id === excludeId || s.date >= date || !s.sets || !s.sets[k]) return;
+    const x = bestOf(k, s.sets[k], s.date); if (better(x, b)) b = x;
+  });
+  return b;
+}
+function scoreText(k, s){
+  if (!s) return "–";
+  if (k === "pullup" && s.mode === "e1rm") return `${fmt(num(s.row[0]) || 0, 1)} lb assist × ${s.reps}`;
+  if (s.mode === "e1rm") return `${fmt(s.load, 1)} lb × ${s.reps}`;
+  return `${fmt(s.v)} ${MODE_UNIT[s.mode] || ""}`;
+}
+function gainText(a, b){
+  if (!a || !b) return "";
+  if (a.mode === "e1rm" && b.mode === "e1rm") return `+${fmt(b.v - a.v, 1)} lb e1RM`;
+  if (a.mode === b.mode) return `+${fmt(b.v - a.v)} ${MODE_UNIT[b.mode] || ""}`;
+  return "added weight";
+}
+function volOf(k, sets, date){
+  if (EX[k].k !== "lift") return 0;
+  return (sets || []).reduce((a, r) => {
+    const w = num(r[0]), reps = num(r[1]); if (reps == null) return a;
+    const load = k === "pullup" ? Math.max(0, bwOn(date) - (w || 0)) : (w || 0);
+    return a + load * reps;
+  }, 0);
+}
+
 function historyFor(k){
-  const kind = EX[k].k, out = [];
+  const out = [];
   Object.values(state.sessions).forEach(s => {
     const sets = s.sets && s.sets[k]; if (!sets) return;
-    const rows = sets.map(r => r.map(num)).filter(r => r.some(v => v != null));
-    if (!rows.length) return;
-    if (kind === "lift") {
-      const top = rows.reduce((a,r) => (r[0]||0) > (a[0]||0) || ((r[0]||0) === (a[0]||0) && (r[1]||0) > (a[1]||0)) ? r : a, rows[0]);
-      const e1rm = Math.max(...rows.map(r => (r[0]||0) * (1 + (r[1]||0)/30)));
-      out.push({date:s.date, top:top[0]||0, reps:top[1]||0, vol:rows.reduce((a,r)=>a+(r[0]||0)*(r[1]||0),0), e1rm, sets:rows});
-    } else {
-      const best = Math.max(...rows.map(r => r[0]||0));
-      out.push({date:s.date, top:best, total:rows.reduce((a,r)=>a+(r[0]||0),0), sets:rows});
-    }
+    const rows = sets.map(r => r.map(num)).filter(r => r.some(v => v != null)); if (!rows.length) return;
+    const best = bestOf(k, rows, s.date); if (!best) return;
+    out.push({date:s.date, best, vol: volOf(k, rows, s.date), total: rows.reduce((a,r) => a + (r[0]||0), 0), sets:rows});
   });
-  return out.sort((a,b) => a.date.localeCompare(b.date));
+  out.sort((a,b) => a.date.localeCompare(b.date));
+  let run = null; out.forEach(p => { p.pr = !!run && better(p.best, run); if (better(p.best, run)) run = p.best; });
+  return out;
 }
 function renderProgress(){
   const logged = Object.keys(EX).filter(k => historyFor(k).length);
   const keys = Object.keys(EX);
   if (!curEx) curEx = logged[0] || "dbcurl";
   $("#exPick").innerHTML = keys.map(k => `<option value="${k}" ${k===curEx?"selected":""}>${esc(EX[k].n)}${logged.includes(k)?"":" (no data)"}</option>`).join("");
-  const h = historyFor(curEx), kind = EX[curEx].k, unit = KUNIT[kind][0];
+  const h = historyFor(curEx), kind = EX[curEx].k, isLift = kind === "lift", isPull = curEx === "pullup";
   if (!h.length) { $("#progBody").innerHTML = `<h2>${esc(EX[curEx].n)}</h2><details class="fn" style="margin-top:8px"><summary><span class="label">Form notes</span><span class="i">Show</span></summary>${formHtml(curEx)}</details><p class="empty">Nothing logged for this exercise yet. Each workout you save adds a point here, so you can watch the weight and reps climb week to week.</p>`; return; }
-  const first = h[0], last = h[h.length-1];
-  const isLift = kind === "lift";
-  const best = Math.max(...h.map(p => p.top));
-  const stats = isLift ? [
-    ["Top set", `${fmt(last.top,1)}<small> lb × ${last.reps}</small>`],
-    ["Best ever", `${fmt(best,1)}<small> lb</small>`],
-    ["Change", `${last.top-first.top>=0?"+":""}${fmt(last.top-first.top,1)}<small> lb</small>`]
-  ] : [
-    ["Latest best", `${fmt(last.top)}<small> ${unit}</small>`],
-    ["Best ever", `${fmt(best)}<small> ${unit}</small>`],
-    ["Sessions", `${h.length}`]
+  const last = h[h.length-1], bestEver = h.reduce((a,p) => better(p.best, a) ? p.best : a, null), prCount = h.filter(p => p.pr).length;
+  const stats = [
+    ["Latest best set", scoreText(curEx, last.best)],
+    ["Best ever", scoreText(curEx, bestEver) + (bestEver.mode === "e1rm" ? `<small> · ${fmt(bestEver.v)} e1RM</small>` : "")],
+    ["Records", `${prCount}<small> PR${prCount === 1 ? "" : "s"}</small>`]
   ];
-  const series = isLift
-    ? [{pts:h.map(p=>({x:p.date,y:p.top})), color:"var(--accent)", dots:true},
-       {pts:h.map(p=>({x:p.date,y:Math.round(p.e1rm)})), color:"var(--muted)", dash:"3 4", width:1.5}]
-    : [{pts:h.map(p=>({x:p.date,y:p.top})), color:"var(--accent)", dots:true}];
-  const legend = isLift ? `<div class="legend"><span><i style="background:var(--accent)"></i>Top set weight</span><span><i style="background:var(--muted)"></i>Estimated 1-rep max</span></div>` : `<div class="legend"><span><i style="background:var(--accent)"></i>Best set (${unit})</span></div>`;
-  const rows = h.slice().reverse().map(p => `<tr><td>${fDate(p.date)}</td><td class="num">${esc(p.sets.map(r => isLift ? `${fmt(r[0],1)}×${fmt(r[1])}` : fmt(r[0])).join(", "))}</td><td class="r num">${isLift ? fmt(p.vol) : fmt(p.total)}</td></tr>`).join("");
+  const weighted = h.filter(p => p.best.mode === "e1rm");
+  let series, legend, minPad;
+  if (weighted.length) {
+    series = [{pts: weighted.map(p => ({x:p.date, y:Math.round(p.best.load*10)/10})), color:"var(--accent)", dots:true},
+              {pts: weighted.map(p => ({x:p.date, y:Math.round(p.best.v)})), color:"var(--muted)", dash:"3 4", width:1.5}];
+    legend = `<span><i style="background:var(--accent)"></i>${isPull ? "Weight you lifted (body − assist)" : "Best set weight"}</span><span><i style="background:var(--muted)"></i>Estimated 1-rep max</span>`;
+    minPad = 5;
+  } else {
+    const u = MODE_UNIT[last.best.mode] || KUNIT[kind][0];
+    series = [{pts: h.map(p => ({x:p.date, y:p.best.v})), color:"var(--accent)", dots:true}];
+    legend = `<span><i style="background:var(--accent)"></i>Best set (${u})</span>`;
+    minPad = 2;
+  }
+  const note = isPull ? "Records use the weight you actually lift (your body weight minus the assist), so less assist scores higher."
+    : weighted.length ? "Records use estimated 1-rep max, weight × (1 + reps ÷ 30), so more reps at a lighter weight still counts as progress."
+    : isLift ? "With no added weight, records count reps in your best set." : "";
+  const setHdr = isPull ? "assist lb×reps" : isLift ? "lb×reps" : (MODE_UNIT[last.best.mode] || KUNIT[kind][0]);
+  const rows = h.slice().reverse().map(p => `<tr><td>${fDate(p.date)}${p.pr ? ` <span class="prstar" title="Personal record">★</span>` : ""}</td><td class="num">${esc(p.sets.map(r => isLift ? `${fmt(r[0]||0,1)}×${fmt(r[1])}` : fmt(r[0])).join(", "))}</td><td class="r num">${isLift ? fmt(p.vol) : fmt(p.total)}</td></tr>`).join("");
   $("#progBody").innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
       <h2>${esc(EX[curEx].n)}</h2>
       <details class="fn"><summary><span class="label">Form notes</span><span class="i">Show</span></summary>${formHtml(curEx)}</details>
-      <div class="stats">${stats.map(([l,v]) => `<div class="stat"><div class="label">${l}</div><div class="v">${v}</div></div>`).join("")}</div>
-      ${legend}
-      ${lineChart(series, {label:EX[curEx].n+" progress", minPad: isLift?5:2})}
-      <div class="tablebox"><table><thead><tr><th>Date</th><th>Sets (${isLift?"lb×reps":unit})</th><th class="r">${isLift?"Volume":"Total"}</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="stats">${stats.map(([l,v]) => `<div class="stat"><div class="label">${l}</div><div class="v vs">${v}</div></div>`).join("")}</div>
+      <div class="legend">${legend}</div>
+      ${lineChart(series, {label:EX[curEx].n+" progress", minPad})}
+      ${note ? `<p class="sub" style="margin:0">${note}</p>` : ""}
+      <div class="tablebox"><table><thead><tr><th>Date</th><th>Sets (${setHdr})</th><th class="r">${isLift ? "Volume lb" : "Total"}</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
 }
 $("#exPick").addEventListener("change", e => { curEx = e.target.value; renderProgress(); });
@@ -1508,22 +1593,26 @@ function weekReport(mon){
   const fdays = days.filter(d => fItems(d).length), ft = fdays.map(d => fTotals(fItems(d)));
   const calAvg = avgOf(ft.map(t => t.cal)), proAvg = avgOf(ft.map(t => t.p)), proHit = ft.filter(t => t.p >= 165).length;
   // lifts: compare each exercise's top weight with the previous time it was done
-  const ups = [], ready = [];
+  const prs = [], ready = [];
+  const weekKeys = new Set(); ses.forEach(([,s]) => Object.keys(s.sets || {}).forEach(k => { if (EX[k] && !PR_SKIP.includes(k)) weekKeys.add(k); }));
+  weekKeys.forEach(k => {
+    let wb = null; ses.forEach(([,s]) => { if (s.sets && s.sets[k]) { const x = bestOf(k, s.sets[k], s.date); if (better(x, wb)) wb = x; } });
+    const prior = bestBefore(k, mon, null);
+    if (prior && better(wb, prior)) prs.push({k, from:prior, to:wb});
+  });
+  const volume = (from, to) => Object.values(state.sessions).filter(s => s.date >= from && s.date <= to).reduce((a,s) => a + Object.entries(s.sets || {}).reduce((b,[k,sets]) => b + (EX[k] ? volOf(k, sets, s.date) : 0), 0), 0);
+  const vol = volume(mon, end), prevVol = volume(prevMon, addDays(mon, -1));
   train.sort((a,b) => a[1].date.localeCompare(b[1].date)).forEach(([id,s]) => {
     const p = plan(s.day, sessionLoc(s));
     Object.entries(s.sets || {}).forEach(([k, sets]) => {
       if (!EX[k] || EX[k].k !== "lift" || k === "pullup") return;
-      const w = topW(sets); if (w == null) return;
-      const prior = Object.values(state.sessions).filter(o => o.date < s.date && o.sets && o.sets[k]).sort((a,b) => b.date.localeCompare(a.date))[0];
-      const pw = prior ? topW(prior.sets[k]) : null;
-      if (pw != null && w > pw && !ups.find(u => u.k === k)) ups.push({k, from:pw, to:w});
       const it = p.x.find(x => x[0] === k), top = it ? rangeTop(it[2]) : null;
       const reps = sets.map(r => num(r[1])).filter(v => v != null);
       if (top && reps.length >= Math.min(it[1], 3) && reps.every(r => r >= top) && !ready.includes(k)) ready.push(k);
     });
   });
   const runMax = Math.max(0, ...ses.map(([,s]) => num(s.sets && s.sets.run && s.sets.run[0] && s.sets.run[0][0]) || 0));
-  return {days, mon, end, train, rec, mins, waterHit, waterAvg, ww, wkChange, avgW, avgChange, fdays, calAvg, proAvg, proHit, ups, ready, runMax};
+  return {days, mon, end, train, rec, mins, waterHit, waterAvg, ww, wkChange, avgW, avgChange, fdays, calAvg, proAvg, proHit, prs, ready, runMax, vol, prevVol};
 }
 function focusTips(r){
   const t = [];
@@ -1552,9 +1641,11 @@ function renderReport(){
       ${tile("Avg vs prior week", `${sg(r.avgChange)}<small> lb</small>`, r.avgW != null ? `this week avg ${fmt(r.avgW,1)} lb` : "no weigh-ins", wc(r.avgChange))}
       ${tile("Calories", r.calAvg != null ? `${fmt(r.calAvg)}<small> avg</small>` : "–", r.fdays.length ? `${r.fdays.length} day${r.fdays.length===1?"":"s"} logged · target 2,200` : "no food logged")}
       ${tile("Protein", r.proAvg != null ? `${fmt(r.proAvg)}<small> g avg</small>` : "–", r.fdays.length ? `165 g+ on ${r.proHit} of ${r.fdays.length} days` : "")}
+      ${tile("Personal records", `${r.prs.length}<small> PR${r.prs.length === 1 ? "" : "s"}</small>`, r.prs.length ? "see the list below" : "beat a past best to earn one")}
+      ${tile("Total lifted", r.vol ? `${fmt(r.vol)}<small> lb</small>` : "–", r.prevVol ? `vs ${fmt(r.prevVol)} lb the week before` : "weight × reps, all lifts")}
     </div>
     <div class="replist">
-      ${r.ups.length ? `<div><span class="label">Lifts that went up</span><ul class="plain">${r.ups.slice(0,6).map(u => `<li>${esc(EX[u.k].n)}: <span class="num">${fmt(u.from,1)} → ${fmt(u.to,1)} lb</span></li>`).join("")}</ul></div>` : ""}
+      ${r.prs.length ? `<div><span class="label">★ Personal records</span><ul class="plain">${r.prs.slice(0,8).map(p => `<li>${esc(EX[p.k].n)}: <span class="num">${esc(scoreText(p.k,p.from))} → ${esc(scoreText(p.k,p.to))}</span> <span class="sub">(${esc(gainText(p.from,p.to))})</span></li>`).join("")}</ul></div>` : ""}
       ${r.ready.length ? `<div><span class="label">Ready to go up next time</span><ul class="plain">${r.ready.slice(0,6).map(k => `<li>↑ ${esc(EX[k].n)}</li>`).join("")}</ul></div>` : ""}
       ${r.runMax ? `<div><span class="label">5K build</span><p style="margin:4px 0 0">Longest run: <span class="num">${fmt(r.runMax)} min</span>${r.runMax >= 30 ? ". That's 5K distance territory." : ` · ${fmt(Math.max(0, 30 - r.runMax))} more minutes to reach 30.`}</p></div>` : ""}
       <div><span class="label">Focus for ${cur ? "the rest of this week" : "this week"}</span><ul class="plain">${focusTips(r).map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>
@@ -1648,7 +1739,7 @@ function beep(big){
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     if (actx.state === "suspended") actx.resume();
-    (big ? [660, 990] : [880]).forEach((f, i) => {
+    (big === "pr" ? [660, 880, 1100, 1320] : big ? [660, 990] : [880]).forEach((f, i) => {
       const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.1;
       o.type = "sine"; o.frequency.value = f;
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
@@ -1665,11 +1756,18 @@ const hapticLbl = (() => {
 })();
 function buzz(big){
   if (!FB.buzz) return;
-  try { if (navigator.vibrate && navigator.vibrate(big ? [30, 60, 30] : 25)) return; } catch(e){}
+  try { if (navigator.vibrate && navigator.vibrate(big === "pr" ? [30, 50, 30, 50, 60] : big ? [30, 60, 30] : 25)) return; } catch(e){}
   try { hapticLbl.click(); } catch(e){}
 }
 function feedback(big){ buzz(big); beep(big); }
 renderFb();
+
+/* ---------- tapping a number or text box selects what's in it, so you can type straight over it ---------- */
+document.addEventListener("focusin", e => {
+  const t = e.target;
+  if (!(t instanceof HTMLInputElement) || !["number","text","search"].includes(t.type)) return;
+  setTimeout(() => { try { t.select(); } catch(err){} }, 0);
+});
 
 function renderAll(){
   try { renderLog(); renderProgress(); renderWeight(); renderMeasures(); renderWater(); renderFood(); renderReport(); } catch(e){ console.error(e); }
