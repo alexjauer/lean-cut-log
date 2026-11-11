@@ -193,6 +193,10 @@ input[type="date"]::-webkit-date-and-time-value{text-align:left}
 .sshead b{font-family:var(--f-display);font-size:17px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
 .sshead .sub{flex-basis:100%;font-size:12.5px}
 .sshead .pair{background:var(--accent);color:var(--accent-ink)}
+.fbrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.fbrow .label{margin-right:4px}
+.fbrow button{padding:5px 12px;font-size:13px}
+.fbrow button[aria-pressed="false"]{color:var(--muted)}
 .savebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toast{font-size:13px;color:var(--good);font-weight:600}
 .toast.err{color:var(--plate)}
@@ -259,6 +263,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <p class="sub" id="dayDesc" style="margin:10px 0 0"></p>
       <div class="locpick" id="locPick" role="group" aria-label="Where you're training" hidden></div>
       <button type="button" id="timerTop" style="margin-top:10px;width:100%">Start timer</button>
+      <div class="fbrow"><span class="label">When you check a set</span><button type="button" id="fbSound"></button><button type="button" id="fbBuzz"></button></div>
     </div>
     <div class="panel" id="exList"></div>
     <div class="panel timebox">
@@ -874,8 +879,8 @@ function fillSet(k, i){
 $("#exList").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   const d = b.dataset;
-  if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; }
-  else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); }
+  if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) feedback(done[k].every(Boolean)); }
+  else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) feedback(true); }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
   else if (d.add) { const k = d.add, prev = draft[k][draft[k].length-1]; draft[k].push(prev.slice()); done[k].push(false); }
   else if (d.rm) { draft[d.rm].pop(); done[d.rm].pop(); }
@@ -1588,6 +1593,45 @@ $("#bkImport").addEventListener("change", async e => {
     toast($("#bkToast"), `Imported ${n} entries`);
   } catch(err){ toast($("#bkToast"), "That file isn't a Lean Cut Log backup.", true); }
 });
+
+
+/* ---------- set feedback: haptic tap + short sound ---------- */
+const FB = (() => { const v = {sound:true, buzz:true}; try { Object.assign(v, JSON.parse(localStorage.getItem("leancut-fb") || "{}")); } catch(e){} return v; })();
+function renderFb(){
+  $("#fbSound").textContent = "Sound " + (FB.sound ? "on" : "off"); $("#fbSound").setAttribute("aria-pressed", FB.sound);
+  $("#fbBuzz").textContent = "Vibrate " + (FB.buzz ? "on" : "off"); $("#fbBuzz").setAttribute("aria-pressed", FB.buzz);
+}
+function fbToggle(k){ FB[k] = !FB[k]; try { localStorage.setItem("leancut-fb", JSON.stringify(FB)); } catch(e){} renderFb(); if (FB[k]) feedback(false); }
+$("#fbSound").addEventListener("click", () => fbToggle("sound"));
+$("#fbBuzz").addEventListener("click", () => fbToggle("buzz"));
+let actx = null;
+function beep(big){
+  if (!FB.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    (big ? [660, 990] : [880]).forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.1;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + 0.14);
+    });
+  } catch(e){}
+}
+// iPhones have no vibration API for web pages. On iOS 18+, toggling a switch-style checkbox gives a light haptic tap.
+const hapticLbl = (() => {
+  const l = document.createElement("label"); l.setAttribute("aria-hidden", "true");
+  l.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0";
+  const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", ""); i.tabIndex = -1;
+  l.appendChild(i); document.body.appendChild(l); return l;
+})();
+function buzz(big){
+  if (!FB.buzz) return;
+  try { if (navigator.vibrate && navigator.vibrate(big ? [30, 60, 30] : 25)) return; } catch(e){}
+  try { hapticLbl.click(); } catch(e){}
+}
+function feedback(big){ buzz(big); beep(big); }
+renderFb();
 
 function renderAll(){
   try { renderLog(); renderProgress(); renderWeight(); renderMeasures(); renderWater(); renderFood(); renderReport(); } catch(e){ console.error(e); }
