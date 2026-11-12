@@ -532,32 +532,34 @@ const EX = {
   legpress:{n:"Leg press",k:"lift"}, pushdown:{n:"Rope triceps pushdown",k:"lift"}, revfly:{n:"Bent-over reverse fly",k:"lift"},
   dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}, ezcurl:{n:"EZ-bar curl",k:"lift"},
   hipthrust:{n:"Barbell hip thrust",k:"lift"}, legcurl:{n:"Leg curl (lying or seated)",k:"lift"}, lunge:{n:"Dumbbell walking lunge",k:"lift"},
-  cablerow:{n:"Seated cable row",k:"lift"}, mshpress:{n:"Machine shoulder press",k:"lift"}, incpress:{n:"Incline dumbbell press",k:"lift"}, bike:{n:"Stationary bike",k:"min"}
+  cablerow:{n:"Seated cable row",k:"lift"}, mshpress:{n:"Machine shoulder press",k:"lift"}, incpress:{n:"Incline dumbbell press",k:"lift"}, bike:{n:"Stationary bike",k:"min"},
+  dface:{n:"Face pull (door anchor)",k:"lift"}, dpushdown:{n:"Triceps pushdown (door anchor)",k:"lift"}, dpulldown:{n:"Lat pulldown (door anchor)",k:"lift"},
+  drow:{n:"Seated row (door anchor)",k:"lift"}, dohext:{n:"Overhead triceps extension (door anchor)",k:"lift"}, pallof:{n:"Pallof press (door anchor)",k:"lift"}, abwheel:{n:"Ab wheel rollout (from knees)",k:"bw"}
 };
 // Swap options when equipment is taken: same movement pattern, same main muscles.
 const ALTS = {
   squat:["legpress","goblet","bss"], legpress:["squat","goblet","bss"], goblet:["legpress","bss","squat"], bss:["lunge","legpress","goblet"], lunge:["bss","goblet"],
   trapdl:["dbrdl","hipthrust","legpress"], dbrdl:["hipthrust","legcurl","trapdl"], hipthrust:["dbrdl","legcurl"], legcurl:["dbrdl","hipthrust"],
-  pullup:["pulldown","cablerow"], pulldown:["pullup","cablerow"], csrow:["row1","cablerow"], row1:["csrow","cablerow"], cablerow:["row1","csrow"],
-  revfly:["facepull"], facepull:["revfly"], shpress:["mshpress"], mshpress:["shpress"],
+  pullup:["pulldown","dpulldown","cablerow"], pulldown:["pullup","dpulldown","cablerow"], dpulldown:["pulldown","pullup","row1"], csrow:["row1","cablerow","drow"], row1:["csrow","drow","cablerow"], cablerow:["row1","csrow","drow"], drow:["row1","cablerow","csrow"],
+  revfly:["dface","facepull"], facepull:["dface","revfly"], dface:["revfly","facepull"], shpress:["mshpress"], mshpress:["shpress"],
   dbbench:["chestpress","incpress","pushup"], chestpress:["dbbench","incpress","pushup"], incpress:["dbbench","chestpress"], dbfloor:["pushup","dbbench"], pushup:["dbfloor","chestpress"],
   inccurl:["dbcurl","ezcurl","preacher"], dbcurl:["inccurl","ezcurl","hammer"], ezcurl:["dbcurl","preacher","inccurl"], preacher:["ezcurl","dbcurl"], hammer:["dbcurl","ezcurl"],
-  ohdb:["ohcable","pushdown","dbskull"], ohcable:["ohdb","pushdown"], pushdown:["ohcable","ohdb","dbskull"], dbskull:["skull","ohdb","pushdown"], skull:["dbskull","ohdb","pushdown"], cgbench:["dbskull","pushdown"], floorpress:["dbskull","pushup"],
-  cablecr:["revcrunch","kneeraise","deadbug"], kneeraise:["revcrunch","deadbug"], revcrunch:["deadbug","kneeraise"], deadbug:["revcrunch","birddog"],
+  ohdb:["dohext","ohcable","dbskull"], ohcable:["ohdb","dohext","pushdown"], dohext:["ohdb","dpushdown","ohcable"], pushdown:["dpushdown","ohcable","ohdb"], dpushdown:["pushdown","ohdb","dbskull"], dbskull:["skull","ohdb","dpushdown"], skull:["dbskull","ohdb","pushdown"], cgbench:["dbskull","pushdown"], floorpress:["dbskull","pushup"],
+  cablecr:["abwheel","pallof","revcrunch"], kneeraise:["abwheel","revcrunch","deadbug"], revcrunch:["abwheel","deadbug","kneeraise"], deadbug:["pallof","revcrunch","birddog"], abwheel:["revcrunch","plank","cablecr"], pallof:["sideplank","deadbug"], plank:["abwheel","pallof"], sideplank:["pallof","plank"],
   calfst:["calfse"], calfse:["calfst"], run:["bike"], incwalk:["bike","walk"], intervals:["bike"]
 };
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
-  mon:{t:"Mon", loc:"home", d:"Full Body A · home dumbbells", x:[["goblet",3,"12–15","A"],["pushup",3,"near failure","A"],["dbrdl",3,"12–15","B"],["row1",3,"12–15/arm","B"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["deadbug",3,"8/side","o"],["circuit",1,"max rounds","o"]],
+  mon:{t:"Mon", loc:"home", d:"Full Body A · home dumbbells", x:[["goblet",3,"12–15","A"],["pushup",3,"near failure","A"],["dbrdl",3,"12–15","B"],["row1",3,"12–15/arm","B"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["pallof",3,"10/side","o"],["deadbug",3,"8/side","o"],["circuit",1,"max rounds","o"]],
     alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"3 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["dbcurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["deadbug",3,"8/side","o"],["incwalk",1,"10 min","o"]]}},
   tue:{t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"3 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["shpress",3,"8–10","A"],["csrow",3,"10–12","A"],["inccurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
-    alt:{loc:"home", d:"Full Body B · home dumbbells", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["revfly",3,"12–15"],["dbcurl",3,"10–15","B"],["ohdb",3,"10–15","B"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
+    alt:{loc:"home", d:"Full Body B · home", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["dpulldown",3,"12–15"],["dbcurl",3,"10–15","B"],["dpushdown",3,"12–15","B"],["dface",2,"15–20","o"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
   wed:{t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000–10,000"]]},
   thu:{t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"3 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["hammer",3,"8–12","B"],["dbskull",3,"10–12","B"],["cablecr",3,"12–15"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["kneeraise",3,"10–12","o"]],
-    alt:{loc:"home", d:"Full Body C · home dumbbells", x:[["heelwarm",1,"3 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["revcrunch",3,"10–15"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
+    alt:{loc:"home", d:"Full Body C · home", x:[["heelwarm",1,"3 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["abwheel",3,"6–10"],["revcrunch",3,"10–15","o"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
   fri:{t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"3 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
-    alt:{loc:"home", d:"Full Body D · home dumbbells", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["row1",3,"12–15/arm","A"],["latraise",3,"15–20","B"],["revfly",2,"15","B"],["dbcurl",3,"10–15","C"],["dbskull",3,"12–15","C"],["circuit",1,"max rounds","o"]]}},
-  sat:{t:"Sat", loc:"home", d:"Arms + core · home dumbbells", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["floorpress",3,"15–20","B"],["latraise",3,"15–20"],["plank",3,"30–45 sec"],["sideplank",2,"30 sec","o"],["birddog",2,"8/side","o"],["walk",1,"20–30 min","o"]],
+    alt:{loc:"home", d:"Full Body D · home", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["drow",3,"12–15","A"],["latraise",3,"15–20","B"],["dface",2,"15–20","B"],["dbcurl",3,"10–15","C"],["dohext",3,"12–15","C"],["circuit",1,"max rounds","o"]]}},
+  sat:{t:"Sat", loc:"home", d:"Arms + core · home", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["dpushdown",3,"12–15","B"],["latraise",3,"15–20"],["pallof",3,"10/side"],["plank",3,"30–45 sec","o"],["abwheel",2,"6–10","o"],["sideplank",2,"30 sec","o"],["walk",1,"20–30 min","o"]],
     alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
   sun:{t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000+"],["walk",1,"20 min, easy","o"]]}
 };
@@ -577,6 +579,13 @@ const fmt = (n, d=0) => n == null ? "–" : (Math.round(n*10**d)/10**d).toLocale
 
 /* ---------- Form notes (from the Exercise routine tab) ---------- */
 const FORM = {
+  dface:["Anchor the bungee high in the door, about face height or above. Pull the handles or rope toward your forehead, spreading your hands apart so your fists end beside your ears.","Light tension, high reps. It builds your rear delts and keeps your shoulders healthy under all the pressing.","Don't lean back or shrug. Stand far enough from the door that there's tension at the start."],
+  dpushdown:["Anchor the bungee high in the door. Elbows pinned to your sides, push the handle down until your arms are straight, then let it rise to chest height.","Squeeze for a second at the bottom; only your forearms move.","Don't lean over the band. Step closer to the door for less tension, farther for more."],
+  dpulldown:["Anchor the bungee at the top of the door. Kneel or sit facing it, arms up. Pull your elbows down toward your back pockets until your hands reach your upper chest, then let them rise slowly.","Start each rep by pulling your shoulder blades down. Fills the vertical-pull gap on home days.","Don't lean way back. Check that the anchor is clamped securely before you pull."],
+  drow:["Anchor the bungee at chest height (or low, sitting on the floor with legs out). Pull the handles to your lower ribs, squeezing your shoulder blades, then let your arms straighten.","Pause a second at your ribs. Step back for more tension.","Keep your torso still and your neck long."],
+  dohext:["Anchor the bungee low in the door. Face away, rope or handle behind your head, elbows pointing forward. Straighten your arms up and forward, then let your hands sink back behind your head.","The deep stretch behind your head builds the long head of the triceps.","Brace so your lower back doesn't arch. Start with a lighter bungee."],
+  pallof:[{lead:"Anchor the bungee at chest height in the door. Stand side-on to the door, feet hip-width:", items:["Hold the handle at your chest with both hands","Press it straight out in front of you","Hold 2 seconds without letting your body twist toward the door","Bring it back to your chest","Switch sides after each set"]},"Your obliques and deep core work to stop the twist. Step farther from the door to make it harder.","Completely neck-safe: your head stays still and upright. Keep your hips square to the front."],
+  abwheel:[{lead:"Kneel on a pad, hands on the wheel under your shoulders:", items:["Tuck your hips slightly and pull your ribs down","Roll forward slowly as far as you can without your lower back sagging","Pull back with your abs, not your arms"]},"Roll out a little farther each week. Full rollouts from standing are a long-term goal, not a starting point. Start with 2–3 sets of 6–8 slow reps.","If your lower back arches or aches, shorten the roll. Head stays in line with your spine, eyes on the floor."],
   hipthrust:["Sit with your upper back against the edge of a bench, a padded barbell across your hips, feet flat and shoulder-width. Drive your hips up until your body is straight from knees to shoulders, squeeze your glutes for a second, lower.","Chin tucked and ribs down; push through your heels to keep the work in your glutes.","Don't arch your lower back at the top. Use the bar pad. If your left heel is sore, push through the whole foot."],
   legcurl:["Pad just above your heels, knees lined up with the machine's pivot. Curl your heels toward your glutes, pause, lower slowly.","Point your toes up toward your shins; the full straight-leg stretch at the bottom matters.","Keep your hips down on the pad (lying) or the thigh pad snug (seated). No bouncing."],
   lunge:["Hold a dumbbell in each hand. Step forward, lower until your back knee nearly touches the floor, then push through the front heel and step into the next lunge.","Long steps load the glutes more; shorter steps load the quads more.","Front knee tracks over your toes. Lunges land hard on the front heel, so go easy on your left side; switch to split squats if it aches."],
@@ -590,7 +599,7 @@ const FORM = {
   revfly:["Hinge forward until your chest is nearly parallel to the floor, or rest your chest on an incline bench. Let light dumbbells hang below you, elbows slightly bent. Raise your arms out to the sides, squeeze your shoulder blades, lower slowly.","Builds rear delts and upper back, the same job the face pull does at the gym.","Light weight only. Keep your neck long and eyes on the floor; no swinging."],
   dbfloor:["Lie on the floor, knees bent, a dumbbell in each hand. Lower until your upper arms touch the floor at about 45° from your body, pause, press up.","The pause on the floor removes momentum. Squeeze your chest at the top.","Elbows at 45°, not flared straight out. Your head rests on the floor."],
   dbskull:["Lie on the floor or a bench, dumbbells over your chest, palms facing each other. Bend only your elbows to lower the weights beside your head, then extend.","Keep your upper arms angled slightly back toward your head so the triceps stay loaded at the top.","Elbows point up, not out. Start light; this is hard on elbows if rushed."],
-  revcrunch:["Lie on your back, hands by your sides, knees bent at 90° over your hips. Curl your pelvis up off the floor, bringing your knees toward your chest, then lower slowly.","The pelvis curl is what works the lower abs, so go slow on the way down.","Your head and shoulders stay on the floor the whole time, so your neck does nothing. Don't swing your legs."],
+  revcrunch:["Lie on your back, hands by your sides, knees bent at 90° over your hips. Curl your pelvis up off the floor, bringing your knees toward your chest, then lower slowly.","The pelvis curl is what works the lower abs, so go slow on the way down. Add ankle weights to progress.","Your head and shoulders stay on the floor the whole time, so your neck does nothing. Don't swing your legs."],
   squat:["Bar on the upper back, not the neck. Feet shoulder-width, toes out 15–30°. Brace, sit down between the heels, drive up.","Go as deep as you can with a flat lower back, at least thighs parallel. Knees push out in line with the toes.","Whole foot planted. If the lower back rounds at the bottom, stop a little higher. Use the rack's safety pins."],
   goblet:["Hold one dumbbell vertically against the chest, elbows down. Squat between the knees, elbows brushing the inner thighs at the bottom.","A 3-second lowering and 1-second pause at the bottom make 25 lb hard.","Chest stays tall; don't let the dumbbell pull you forward."],
   dbrdl:["Stand tall, soft knees. Push the hips straight back, sliding the weights down the thighs until a strong hamstring stretch. Squeeze the glutes to stand.","The stretch is the point. Go only as low as the back stays flat.","It's a hip hinge, not a squat or a toe touch. Rounding the back to reach lower is the most common injury mistake."],
@@ -617,12 +626,12 @@ const FORM = {
   ohcable:["Rope on a low cable. Face away in a staggered stance, rope behind the head, elbows forward. Straighten up and forward, then let the hands sink back.","The deep stretch behind the head builds the long head, the biggest part of the triceps.","Brace so the lower back doesn't arch. If the elbows ache, go lighter; if it persists, swap in a rope pushdown."],
   ohdb:["Sit or stand, one dumbbell held with both hands cupping the top end. Press overhead, lower behind the head bending only the elbows.","Lower slowly to a full stretch; the 3-second lowering and rest-pause sets do the work at 25 lb.","Firm grip, ribs down, head still and not pushed forward."],
   skull:["Flat bench, EZ-bar over the chest with a narrow grip. Tilt the arms slightly back, bend the elbows to lower the bar just behind the forehead, extend.","Arms angled slightly back keeps tension on the triceps at the top.","Elbows point up, not flared. Moderate weight; hard on elbows if too heavy. Head flat on the bench."],
-  deadbug:["On the back, arms to the ceiling, hips and knees at 90°. Press the lower back flat. Slowly extend opposite arm and leg, exhale, return, switch.","The lower back staying glued down is the whole exercise. Slower is harder.","Head rests on the floor. If the back arches, don't lower as far."],
+  deadbug:["On the back, arms to the ceiling, hips and knees at 90°. Press the lower back flat. Slowly extend opposite arm and leg, exhale, return, switch.","The lower back staying glued down is the whole exercise. Slower is harder. When it gets easy, add ankle weights.","Head rests on the floor. If the back arches, don't lower as far."],
   cablecr:["Rope on a high cable. Kneel facing it, rope ends beside the head at the temples. Curl the ribs down toward the hips, return slowly.","Movement comes from the abs crunching the ribcage, not the hips sitting back. Exhale hard at the bottom.","Hands and head move as one unit; never yank the head. If the neck tightens, go lighter."],
   kneeraise:["Hang from a bar or use the captain's chair. Bring the knees toward the chest and curl the pelvis up at the top, lower without swinging.","The pelvis tilt at the top works the lower abs.","Captain's chair is easier on grip and shoulders. Shoulders down, head neutral, eyes forward."],
   plank:["Forearms down, elbows under shoulders, body straight head to heels. Squeeze the glutes, pull the belly button in.","A hard 30 seconds beats a sloppy 2 minutes.","Eyes on the floor between the hands. Stop when the hips sag."],
   sideplank:["On one forearm, elbow under the shoulder, feet stacked (knees bent to make it easier). Lift the hips into a straight line.","Works the obliques. Push the hips slightly forward.","Head in line with the spine, not dropping toward the shoulder."],
-  birddog:["Hands and knees. Reach one arm forward and the opposite leg back until level, hold 3 seconds, switch.","No rocking; imagine a glass of water on the lower back.","Eyes on the floor, neck long."],
+  birddog:["Hands and knees. Reach one arm forward and the opposite leg back until level, hold 3 seconds, switch.","No rocking; imagine a glass of water on the lower back. Light ankle weights make it harder.","Eyes on the floor, neck long."],
   incwalk:["10–12% incline, 3.0–4.0 mph. Jog only what feels comfortable; walk the rest.","Steady hard effort burns a lot without pounding legs that just squatted.","Don't hold the handrails; lower the incline instead. Ramp the incline over the first 2 minutes."],
   run:["Run tall with a slight lean from the ankles. Short quick steps (about 160–170 a minute), feet landing under the hips.","Conversational pace: full sentences. Add 3–5 minutes a week up to 35.","Most shin and knee pain comes from adding too much too fast or overstriding. Running shoes, relaxed shoulders and jaw. Left heel: if it aches during or the morning after a run, hold that week's time instead of adding, and swap a run for the bike if it flares."],
   intervals:[{lead:"Treadmill intervals:", items:["3 minutes of easy walking to warm up","1 minute fast, about 8 out of 10 effort","90 seconds of walking","Repeat the fast minute and the walk 6–8 times"]},"Add 0.2–0.3 mph a week only if every round feels repeatable.","Step onto the side rails to change speed; never jump onto a moving belt."],
@@ -639,7 +648,7 @@ const FORM = {
   steps:["Total steps for the day from a phone or watch.","8,000–10,000 a day burns more fat over a week than extra cardio sessions, without costing recovery.","Spread them out: a 10-minute walk after meals adds up fast and helps digestion."],
   walk:["A fast pace you could keep for 30 minutes while talking a little breathlessly, outdoors or on a treadmill.","Adds steps and calorie burn while helping recovery.","In winter dark or cold: bright layers, or the treadmill."]
 };
-const CORE_KEYS = ["revcrunch","deadbug","cablecr","kneeraise","plank","sideplank","birddog"];
+const CORE_KEYS = ["pallof","abwheel","revcrunch","deadbug","cablecr","kneeraise","plank","sideplank","birddog"];
 function formHtml(k){
   const f = FORM[k]; if (!f) return "";
   const neck = CORE_KEYS.includes(k) ? `<p class="neck">Neck: tongue on the roof of the mouth, imagine a tennis ball between chin and chest. If the neck tenses first, end the set.</p>` : "";
@@ -650,6 +659,7 @@ function formHtml(k){
 
 /* ---------- Target muscles ---------- */
 const MUSCLE = {
+  dface:"Rear delts · Upper back · Rotator cuff", dpushdown:"Triceps", dpulldown:"Lats · Biceps", drow:"Upper back · Lats · Biceps", dohext:"Triceps (long head)", pallof:"Obliques · Deep core", abwheel:"Abs · Deep core",
   hipthrust:"Glutes · Hamstrings", legcurl:"Hamstrings", lunge:"Quads · Glutes", cablerow:"Upper back · Lats · Biceps", mshpress:"Shoulders · Triceps", incpress:"Upper chest · Shoulders · Triceps", bike:"Aerobic base · Legs",
   ezcurl:"Biceps",   legpress:"Quads · Glutes", pushdown:"Triceps", revfly:"Rear delts · Upper back", dbfloor:"Chest · Triceps", dbskull:"Triceps", revcrunch:"Lower abs",
   goblet:"Quads · Glutes · Core", dbrdl:"Hamstrings · Glutes · Lower back", pushup:"Chest · Triceps · Front delts",
@@ -899,7 +909,7 @@ function exCard(it){
     (CD_KINDS.includes(e.k) ? `<button type="button" class="cdb" data-cd="${k}" data-i="${i}" aria-label="Start a countdown for ${esc(e.n)} set ${i+1}">⏲</button>` : "") +
     `<button type="button" class="chk" data-chk="${k}" data-i="${i}" aria-pressed="${!!done[k][i]}" aria-label="Mark ${esc(e.n)} set ${i+1} done">✓</button>`).join("");
   const upHtml = !up ? "" : up.max
-    ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max, so add a rep, slow the lowering to 4 seconds, or add a set.</div>`
+    ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max. Next step: add a light resistance band (stand on it and hold it with the dumbbells), then medium, then heavy. You can also add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
   return `<div class="ex ${allDone?"exdone":""}" data-ex="${k}">
       <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ Swapped in for ${esc(EX[it[4]].n)}</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
@@ -1938,7 +1948,7 @@ function pose(P){
   [p.K2, p.A2, p.T2] = leg(P.thigh2 ?? P.thigh ?? 0, P.shin2 ?? P.shin ?? 0, P.foot2 ?? P.foot ?? 90);
   const pin = P.pin || ["A", [55, 90]], off = [pin[1][0] - p[pin[0]][0], pin[1][1] - p[pin[0]][1]];
   for (const k in p) p[k] = pa(p[k], off);
-  const tgt = (v) => typeof v[0] === "string" ? pa(p[v[0]], [v[1], v[2]]) : v;
+  const tgt = (v) => v[0] === "Sx" ? [p.S[0] + v[1], v[2]] : typeof v[0] === "string" ? pa(p[v[0]], [v[1], v[2]]) : v;
   if (P.hand) [p.E, p.W] = ik2(p.S, tgt(P.hand), LEN.u, LEN.f, P.eb ?? 1);
   if (P.hand2 || (P.hand && P.both !== false)) [p.E2, p.W2] = ik2(p.S, tgt(P.hand2 || P.hand), LEN.u, LEN.f, P.eb2 ?? P.eb ?? 1);
   if (P.ankle) { [p.K, p.A] = ik2(p.H, tgt(P.ankle), LEN.th, LEN.sh, P.kb ?? -1); p.T = pa(p.A, dv(P.foot ?? 90, LEN.ft)); }
@@ -2010,6 +2020,8 @@ const A = {
   cablecr:{a:{pin:["K",[62,90]], torso:178, thigh:0, shin:270, foot:0, hand:["N",4,4], eb:1}, b:{pin:["K",[62,90]], torso:112, thigh:0, shin:270, foot:0, hand:["N",4,4], eb:1}, eq:"handle", hot:["t"], props:p => cable([76, 4], p.W)},
   kneeraise:{a:{pin:["S",[60,40]], torso:180, thigh:2, shin:2, hand:[62,13], eb:1}, b:{pin:["S",[60,40]], torso:182, thigh:108, shin:8, hand:[62,13], eb:1}, hot:["th","t"], props:() => barTop(13)},
   revcrunch:{a:{pin:["S",[36,86]], torso:270, uarm:90, farm:90, thigh:180, shin:90}, b:{pin:["S",[36,86]], torso:283, uarm:90, farm:90, thigh:222, shin:118}, hot:["t"]},
+  pallof:{a:{...STAND, torso:180, hand:["S",6,10], eb:1}, b:{...STAND, torso:180, hand:["S",26,8], eb:1}, eq:"handle", hot:["t"], per:2.6, props:p => `<circle class="pf" cx="104" cy="${f1(p.S[1]+8)}" r="2.6"/><line class="cb" x1="104" y1="${f1(p.S[1]+8)}" x2="${f1(p.W[0])}" y2="${f1(p.W[1])}"/>`},
+  abwheel:{a:{pin:["K",[40,90]], torso:138, thigh:-8, shin:270, foot:0, hand:["Sx",4,86], eb:1}, b:{pin:["K",[40,90]], torso:102, thigh:-52, shin:270, foot:0, hand:["Sx",26,86], eb:1}, eq:"wheel", hot:["t"], per:3},
   latraise:{front:true, a:{arm:12}, b:{arm:86}, eq:"db"},
   revfly:{front:true, bent:true, a:{arm:6}, b:{arm:78}, eq:"db"},
   walk:{a:{pin:["H",[58,49]], torso:178, thigh:22, shin:4, foot:90, thigh2:-18, shin2:-34, foot2:62, uarm:-22, farm:12, uarm2:22, farm2:44}, b:{pin:["H",[58,49]], torso:178, thigh:-18, shin:-34, foot:62, thigh2:22, shin2:4, foot2:90, uarm:22, farm:44, uarm2:-22, farm2:12}, per:1.1, hot:["th","sh"], props:() => tread(0), nofloor:true},
@@ -2036,6 +2048,7 @@ const ANIM_OF = {
   ohdb:"ohext", ohcable:"ohcable", pushdown:"pushdown", skull:"skull", dbskull:["skull","db"],
   deadbug:"deadbug", birddog:"birddog", cablecr:"cablecr", kneeraise:"kneeraise", revcrunch:"revcrunch",
   walk:"walk", steps:"walk", incwalk:"incwalk", run:"run", intervals:"run", bike:"bike", circuit:"circuit",
+  dface:"facepull", dpushdown:"pushdown", dpulldown:"pulldown", drow:"cablerow", dohext:"ohcable", pallof:"pallof", abwheel:"abwheel",
   heelwarm:"ankle", anklealpha:"ankle", shortfoot:"shortfoot", bandankle:"band", calfstretch:"calfstretch", balance:"balance", tibraise:"tibraise", chintuck:"chintuck", mobility:"mobility"
 };
 function animDef(k){ const m = ANIM_OF[k]; if (!m) return null; const [name, eq] = Array.isArray(m) ? m : [m]; const d = A[name]; return d ? {...d, eq: eq || d.eq} : null; }
@@ -2046,6 +2059,7 @@ function eqAt(eq, w){
   if (eq === "db" || eq === "db1") return `<rect class="eq" x="${f1(w[0]-4.5)}" y="${f1(w[1]-2.2)}" width="9" height="4.4" rx="2"/>`;
   if (eq === "bar" || eq === "bar2") return `<circle class="eq" cx="${f1(w[0])}" cy="${f1(w[1])}" r="4"/>`;
   if (eq === "trap") return `<rect class="eq" x="${f1(w[0]-7)}" y="${f1(w[1]-2)}" width="14" height="4" rx="2"/><circle class="eq" cx="${f1(w[0]-9)}" cy="${f1(w[1])}" r="4"/>`;
+  if (eq === "wheel") return `<circle class="eq" cx="${f1(w[0])}" cy="${f1(w[1]+1.5)}" r="4.5"/><circle class="hd" cx="${f1(w[0])}" cy="${f1(w[1]+1.5)}" r="1.4"/>`;
   if (eq === "handle") return `<circle class="eq" cx="${f1(w[0])}" cy="${f1(w[1])}" r="2.2"/>`;
   return "";
 }
