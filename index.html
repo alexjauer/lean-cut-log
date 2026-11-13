@@ -527,7 +527,7 @@ const EX = {
   intervals:{n:"Treadmill intervals",k:"rounds"}, floorpress:{n:"Close-grip floor press",k:"lift"},
   steps:{n:"Daily steps",k:"steps"}, mobility:{n:"Mobility routine",k:"min"}, chintuck:{n:"Chin tucks (neck prehab)",k:"bw"},
   heelwarm:{n:"Heel warm-up",k:"min"}, calfstretch:{n:"Calf + soleus wall stretch",k:"time"}, anklealpha:{n:"Ankle alphabet (left)",k:"rounds"},
-  shortfoot:{n:"Towel scrunch / short foot (left)",k:"bw"}, bandankle:{n:"Banded ankle 4-way (left)",k:"bw"}, balance:{n:"Single-leg balance (left)",k:"time"}, tibraise:{n:"Tibialis wall raise",k:"bw"},
+  shortfoot:{n:"Towel scrunch / short foot (left)",k:"bw"}, bandankle:{n:"Banded ankle 4-way (left)",k:"bw"}, bandevert:{n:"Band eversion, extra (left)",k:"bw"}, balance:{n:"Single-leg balance (left)",k:"time"}, tibraise:{n:"Tibialis wall raise",k:"bw"},
   plank:{n:"Plank",k:"time"}, sideplank:{n:"Side plank (per side)",k:"time"}, birddog:{n:"Bird dog (per side)",k:"bw"}, walk:{n:"Brisk walk",k:"min"},
   legpress:{n:"Leg press",k:"lift"}, pushdown:{n:"Rope triceps pushdown",k:"lift"}, revfly:{n:"Bent-over reverse fly",k:"lift"},
   dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}, ezcurl:{n:"EZ-bar curl",k:"lift"},
@@ -551,17 +551,17 @@ const ALTS = {
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
   mon:{t:"Mon", loc:"home", d:"Full Body A · home dumbbells", x:[["goblet",3,"12–15","A"],["pushup",3,"near failure","A"],["dbrdl",3,"12–15","B"],["row1",3,"12–15/arm","B"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["pallof",3,"10/side","o"],["deadbug",3,"8/side","o"],["circuit",1,"max rounds","o"]],
-    alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"3 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["dbcurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["deadbug",3,"8/side","o"],["incwalk",1,"10 min","o"]]}},
-  tue:{t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"3 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["shpress",3,"8–10","A"],["csrow",3,"10–12","A"],["inccurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
-    alt:{loc:"home", d:"Full Body B · home", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["dpulldown",3,"12–15"],["dbcurl",3,"10–15","B"],["dpushdown",3,"12–15","B"],["dface",2,"15–20","o"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
-  wed:{t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000–10,000"]]},
-  thu:{t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"3 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["hammer",3,"8–12","B"],["dbskull",3,"10–12","B"],["cablecr",3,"12–15"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["kneeraise",3,"10–12","o"]],
-    alt:{loc:"home", d:"Full Body C · home", x:[["heelwarm",1,"3 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["abwheel",3,"6–10"],["revcrunch",3,"10–15","o"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
-  fri:{t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"3 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
-    alt:{loc:"home", d:"Full Body D · home", x:[["heelwarm",1,"3 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["drow",3,"12–15","A"],["latraise",3,"15–20","B"],["dface",2,"15–20","B"],["dbcurl",3,"10–15","C"],["dohext",3,"12–15","C"],["circuit",1,"max rounds","o"]]}},
+    alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"4 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["dbcurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["deadbug",3,"8/side","o"],["incwalk",1,"10 min","o"]]}},
+  tue:{t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"4 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["shpress",3,"8–10","A"],["csrow",3,"10–12","A"],["inccurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
+    alt:{loc:"home", d:"Full Body B · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["dpulldown",3,"12–15"],["dbcurl",3,"10–15","B"],["dpushdown",3,"12–15","B"],["dface",2,"15–20","o"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
+  wed:{t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000–10,000"]]},
+  thu:{t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"4 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["hammer",3,"8–12","B"],["dbskull",3,"10–12","B"],["cablecr",3,"12–15"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["kneeraise",3,"10–12","o"]],
+    alt:{loc:"home", d:"Full Body C · home", x:[["heelwarm",1,"4 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["abwheel",3,"6–10"],["revcrunch",3,"10–15","o"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
+  fri:{t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"4 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
+    alt:{loc:"home", d:"Full Body D · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["drow",3,"12–15","A"],["latraise",3,"15–20","B"],["dface",2,"15–20","B"],["dbcurl",3,"10–15","C"],["dohext",3,"12–15","C"],["circuit",1,"max rounds","o"]]}},
   sat:{t:"Sat", loc:"home", d:"Arms + core · home", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["dpushdown",3,"12–15","B"],["latraise",3,"15–20"],["pallof",3,"10/side"],["plank",3,"30–45 sec","o"],["abwheel",2,"6–10","o"],["sideplank",2,"30 sec","o"],["walk",1,"20–30 min","o"]],
     alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
-  sun:{t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000+"],["walk",1,"20 min, easy","o"]]}
+  sun:{t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000+"],["walk",1,"20 min, easy","o"]]}
 };
 const KUNIT = {steps:["steps"],lift:["lb","reps"],bw:["reps"],time:["sec"],min:["min"],rounds:["rounds"]};
 const START_W = 180, GOAL_W = 165;
@@ -636,11 +636,12 @@ const FORM = {
   run:["Run tall with a slight lean from the ankles. Short quick steps (about 160–170 a minute), feet landing under the hips.","Conversational pace: full sentences. Add 3–5 minutes a week up to 35.","Most shin and knee pain comes from adding too much too fast or overstriding. Running shoes, relaxed shoulders and jaw. Left heel: if it aches during or the morning after a run, hold that week's time instead of adding, and swap a run for the bike if it flares."],
   intervals:[{lead:"Treadmill intervals:", items:["3 minutes of easy walking to warm up","1 minute fast, about 8 out of 10 effort","90 seconds of walking","Repeat the fast minute and the walk 6–8 times"]},"Add 0.2–0.3 mph a week only if every round feels repeatable.","Step onto the side rails to change speed; never jump onto a moving belt."],
   circuit:[{lead:"Repeat for 8 minutes with as little rest as you need:", items:["10 goblet squats","10 push-ups","30-second plank"]},"Count the rounds and beat it next week.","Form beats speed. When push-ups get sloppy, finish them from your knees."],
-  heelwarm:[{lead:"Before leg work and runs:", items:["1 minute of ankle circles, both directions","30-second calf stretch on each leg","30 seconds balancing on your left foot","10 slow calf raises on both feet"]},"Warm, mobile ankles let you squat deeper and run with a smoother stride.","The plated heel is stiffer and stiffens more when cold. Never start squats or a run on a cold ankle."],
+  heelwarm:[{lead:"Before leg work and runs:", items:["1 minute of ankle circles, both directions","30-second calf stretch on each leg","30-second band hold, left foot: band around your forefoot, turn the sole outward and hold","30 seconds balancing on your left foot","10 slow calf raises on both feet"]},"Warm, mobile ankles let you squat deeper and run with a smoother stride.","The plated heel is stiffer and stiffens more when cold. Never start squats or a run on a cold ankle."],
   calfstretch:[{lead:"Hands on a wall, one foot back, heel down. Both legs, extra time on the left:", items:["30 seconds with the back knee straight (calf)","30 seconds with the back knee slightly bent (soleus)"]},"Tight calves after a heel fracture limit squat depth and running stride; this is the most important stretch for you.","Steady stretch, no bouncing. Keep the back foot pointing straight ahead."],
   anklealpha:["Seated, left leg extended or crossed. Trace the alphabet A–Z in the air with the big toe, moving at the ankle only.","Restores range in the joint below the ankle, which the fracture and hardware often stiffen.","Small, smooth movements. Stop short of sharp pain at the hardware."],
   shortfoot:["Seated, left foot flat on a towel. Scrunch the towel toward you with the toes, or keep the toes long and pull the ball of the foot toward the heel to lift the arch (short foot).","Builds the small foot muscles that support the heel and arch on landings.","Toes stay relaxed on short foot; no cramping. Rest if the arch cramps."],
-  bandankle:[{lead:"Seated, a light band around your left forefoot. Slowly, against the band:", items:["Point your foot down","Pull it up toward your shin","Turn the sole in","Turn the sole out"]},"Strengthens every direction of the ankle for running and split squats.","Light band, slow and controlled. Turning the sole in and out may be stiffest; work only the range that's comfortable."],
+  bandevert:[{lead:"Seated, band looped around your left forefoot and anchored to the inside (around your right foot works):", items:["Turn the sole of your left foot outward against the band","Hold 2 seconds at the end","Return slowly, about 3 seconds","Keep your heel planted and your knee still; the movement comes from the ankle"]},"Strengthens the peroneal tendons along the outside of the heel, the spot that hurts on calf raises and Warrior 2.","Light to medium band. Slow beats heavy. If the outer heel flares the next morning, use a lighter band."],
+  bandankle:[{lead:"Seated, a light band around your left forefoot. Slowly, against the band:", items:["Point your foot down","Pull it up toward your shin","Turn the sole in","Turn the sole out"]},"Strengthens every direction of the ankle for running and split squats. The extra sole-out sets come right after this.","Light band, slow and controlled. Turning the sole in and out may be stiffest; work only the range that's comfortable."],
   balance:["Stand on the left foot near a counter, knee soft. Hold 30 sec. Progress: eyes closed, then standing on a folded towel or pillow.","Balance and ankle control usually lag after a heel fracture; better control means a safer, more efficient stride.","Fingertip on the counter until it's steady. Shoes on at first if barefoot hurts."],
   tibraise:["Back against a wall, heels about a foot out. Lift the toes and forefoot toward the shins, lower slowly.","Strengthens the shin muscles that absorb each running step; helps prevent shin splints.","Slow on the way down. Keep the heels planted."],
   mobility:[{lead:"10 minutes, 30–45 seconds each:", items:["Couch or kneeling hip-flexor stretch","Hamstring stretch","Calf stretch on a step","Doorway chest stretch","Open-book upper-back rotation, lying on your side","Child's pose"]},"Better hip and upper-back mobility means deeper squats, cleaner presses and an easier running stride.","Ease into each stretch and breathe; no bouncing. Mild tension, never pain."],
@@ -674,7 +675,7 @@ const MUSCLE = {
   preacher:"Biceps (short head)", skull:"Triceps", intervals:"Speed · Conditioning", floorpress:"Triceps · Chest",
   steps:"Daily activity · Fat loss", mobility:"Hips · Hamstrings · Calves · Upper back", chintuck:"Deep neck flexors",
   heelwarm:"Ankle · Calves · Balance", calfstretch:"Calves · Soleus · Achilles", anklealpha:"Ankle mobility",
-  shortfoot:"Foot arch muscles", bandankle:"Ankle stabilizers", balance:"Ankle stability · Balance", tibraise:"Shins (tibialis)",
+  shortfoot:"Foot arch muscles", bandankle:"Ankle stabilizers", bandevert:"Peroneals (outer ankle)", balance:"Ankle stability · Balance", tibraise:"Shins (tibialis)",
   plank:"Abs · Deep core", sideplank:"Obliques · Hips", birddog:"Deep core · Glutes · Back", walk:"Fat loss · Recovery"
 };
 /* ---------- storage: shared db when available, this device otherwise ---------- */
@@ -794,7 +795,7 @@ function draftClear(){ try { Object.keys(localStorage).filter(k => k.startsWith(
 function markDirty(){ dirty = true; draftSave(); }
 
 /* time estimates */
-const REHAB = ["calfstretch","anklealpha","shortfoot","bandankle","balance","tibraise","chintuck"];
+const REHAB = ["calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck"];
 function itemMin([k,n,target,fl]){
   const kind = EX[k].k, t = String(target), per = /\/(arm|leg|side)|each/.test(t) ? 1.4 : 1;
   if (kind === "steps") return 0;
@@ -927,7 +928,7 @@ function exCard(it){
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
       <div class="sets ${u.length===1?"one":""} ${CD_KINDS.includes(e.k)?"cd":""}">${rows}</div>
       ${swapHtml}
-      <div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}${!isOpt(it) && !allDone ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
+      <div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
     </div>`;
 }
 function renderExList(){
@@ -1215,7 +1216,7 @@ function niceStep(raw){ const p = 10 ** Math.floor(Math.log10(raw || 1)); const 
 let curEx = null;
 /* ---------- progress scoring: estimated 1-rep max, reps, or time ---------- */
 // e1RM = weight × (1 + reps ÷ 30). Bodyweight moves score by reps; assisted pull-ups use body weight minus the assist.
-const PR_SKIP = ["heelwarm","mobility","walk","steps","incwalk","intervals","calfstretch","anklealpha","shortfoot","bandankle","balance","tibraise","chintuck"];
+const PR_SKIP = ["heelwarm","mobility","walk","steps","incwalk","intervals","calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck"];
 const MODE_UNIT = {reps:"reps", sec:"sec", min:"min", rounds:"rounds"};
 function bwOn(date){
   const w = Object.values(state.weights).filter(x => x.date <= date && num(x.lb) != null).sort((a,b) => b.date.localeCompare(a.date))[0];
@@ -2095,7 +2096,7 @@ const ANIM_OF = {
   deadbug:"deadbug", birddog:"birddog", cablecr:"cablecr", kneeraise:"kneeraise", revcrunch:"revcrunch",
   walk:"walk", steps:"walk", incwalk:"incwalk", run:"run", intervals:"run", bike:"bike", circuit:"circuit",
   dface:"facepull", dpushdown:"pushdown", dpulldown:"pulldown", drow:"cablerow", dohext:"ohcable", pallof:"pallof", abwheel:"abwheel",
-  heelwarm:"ankle", anklealpha:"ankle", shortfoot:"shortfoot", bandankle:"band", calfstretch:"calfstretch", balance:"balance", tibraise:"tibraise", chintuck:"chintuck", mobility:"mobility"
+  heelwarm:"ankle", anklealpha:"ankle", shortfoot:"shortfoot", bandankle:"band", bandevert:"band", calfstretch:"calfstretch", balance:"balance", tibraise:"tibraise", chintuck:"chintuck", mobility:"mobility"
 };
 function animDef(k){ const m = ANIM_OF[k]; if (!m) return null; const [name, eq] = Array.isArray(m) ? m : [m]; const d = A[name]; return d ? {...d, eq: eq || d.eq} : null; }
 const f1 = n => Math.round(n*10)/10;

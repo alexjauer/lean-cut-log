@@ -1,6 +1,6 @@
 // Lean Cut Log service worker: makes the app open offline.
 // When you upload a new index.html, bump this version so phones pick up the change.
-const CACHE = "leancut-v15";
+const CACHE = "leancut-v17";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
