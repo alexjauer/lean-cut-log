@@ -1386,7 +1386,20 @@ function renderWeight(){
 $("#wSave").addEventListener("click", async () => {
   const d = $("#wDate").value, v = num($("#wVal").value);
   if (!d || v == null || v < 80 || v > 400) { toast($("#wToast"), "Enter a date and a weight in pounds.", true); return; }
-  try { await putWeight(d, Math.round(v*10)/10); $("#wVal").value = ""; toast($("#wToast"), `Logged ${fmt(v,1)} lb for ${fDate(d)}`); }
+  const lb = Math.round(v*10)/10;
+  const prev = Object.values(state.weights).filter(x => x.date < d && num(x.lb) != null).sort((a,b) => b.date.localeCompare(a.date))[0];
+  try {
+    await putWeight(d, lb); $("#wVal").value = "";
+    const diff = prev ? Math.round((lb - num(prev.lb))*10)/10 : null;
+    if (diff != null && diff <= -0.5) {
+      tune("win"); buzz("pr");
+      const r = $("#wSave").getBoundingClientRect(); confetti(r.left + r.width/2, r.top, 80, Math.PI);
+      toast($("#wToast"), `${fmt(lb,1)} lb · down ${fmt(-diff,1)} since ${fDate(prev.date)}. Nice work!`);
+    } else if (diff != null && diff >= 0.5) {
+      tune("sad"); buzz(false);
+      toast($("#wToast"), `${fmt(lb,1)} lb · up ${fmt(diff,1)} since ${fDate(prev.date)}. Day-to-day swings are mostly water; watch the weekly average.`);
+    } else toast($("#wToast"), `Logged ${fmt(lb,1)} lb for ${fDate(d)}${diff != null ? ` (${diff > 0 ? "+" : diff < 0 ? "−" : "±"}${fmt(Math.abs(diff),1)})` : ""}`);
+  }
   catch(e){ toast($("#wToast"), "Couldn't save. Check your connection and try again.", true); }
 });
 $("#wBody").addEventListener("click", async e => {
@@ -1888,6 +1901,26 @@ function fbToggle(k){ FB[k] = !FB[k]; try { localStorage.setItem("leancut-fb", J
 $("#fbSound").addEventListener("click", () => fbToggle("sound"));
 $("#fbBuzz").addEventListener("click", () => fbToggle("buzz"));
 let actx = null;
+// Weigh-in sounds: a short fanfare for a drop, a "wah-wah" for a gain.
+function tune(kind){
+  if (!FB.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    const t0 = actx.currentTime;
+    const notes = kind === "win"
+      ? [[523,0,.12,"triangle"],[659,.12,.12,"triangle"],[784,.24,.12,"triangle"],[1047,.36,.42,"triangle"],[784,.36,.42,"sine"],[659,.36,.42,"sine"]]
+      : [[392,0,.32,"sawtooth",370],[370,.34,.32,"sawtooth",349],[349,.68,.32,"sawtooth",330],[330,1.02,.8,"sawtooth",294]];
+    notes.forEach(([f, at, dur, type, bend]) => {
+      const o = actx.createOscillator(), g = actx.createGain(), lp = actx.createBiquadFilter(), t = t0 + at;
+      o.type = type; o.frequency.setValueAtTime(f, t); if (bend) o.frequency.linearRampToValueAtTime(bend, t + dur);
+      lp.type = "lowpass"; lp.frequency.value = kind === "win" ? 4000 : 1200;
+      const peak = kind === "win" ? 0.22 : 0.16;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.02); g.gain.setValueAtTime(peak, t + dur*0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); lp.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.02);
+    });
+  } catch(e){}
+}
 function beep(big){
   if (!FB.sound) return;
   try {
