@@ -771,14 +771,24 @@ const LOCNAME = {gym:"Gym", home:"Home", rest:"Recovery"};
 const sessionLoc = s => s.loc || (DAYS[s.day] ? DAYS[s.day].loc : "gym");
 function plan(day = curDay, loc = curLoc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
 const isOpt = it => /o/.test(it[3] || "");
-let swaps = {}, swapOpen = null;
+let swaps = {}, swapOpen = null, later = [];
 const itemsOf = (p, sw) => p.x.map(it => sw && sw[it[0]] && EX[sw[it[0]]] ? [sw[it[0]], it[1], it[2], it[3] || "", it[0]] : it);
-const items = () => itemsOf(plan(), swaps);
+const baseOf = it => it[4] || it[0];
+// "Do later": move an essential (and its superset partner) to the end of the essentials.
+function items(){
+  const its = itemsOf(plan(), swaps), ess = its.filter(it => !isOpt(it)), opt = its.filter(isOpt);
+  const moved = new Set();
+  later.forEach(b => { const it = ess.find(x => baseOf(x) === b); if (!it) return; moved.add(b); const L = pairOf(it); if (L) ess.forEach(x => { if (pairOf(x) === L) moved.add(baseOf(x)); }); });
+  const order = [...later.flatMap(b => { const it = ess.find(x => baseOf(x) === b); const L = it && pairOf(it); return L ? ess.filter(x => pairOf(x) === L).map(baseOf) : [b]; })];
+  const stay = ess.filter(x => !moved.has(baseOf(x))), go = [...new Set(order)].map(b => ess.find(x => baseOf(x) === b)).filter(Boolean);
+  return [...stay, ...go, ...opt];
+}
 const pairOf = it => (it[3] || "").replace(/o/g, "");
+const isLater = it => { const L = pairOf(it), its = itemsOf(plan(), swaps); const grp = L ? its.filter(x => pairOf(x) === L).map(x => x[4] || x[0]) : [it[4] || it[0]]; return grp.some(g => later.includes(g)); };
 
 /* unsaved work is kept on this device until you save */
 const DK = () => "leancut-draft-" + sid() + "-" + plan().loc;
-function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({sets:draft, done, swaps, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
+function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({sets:draft, done, swaps, later, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
 function draftLoad(){ try { return JSON.parse(localStorage.getItem(DK()) || "null"); } catch(e){ return null; } }
 function draftClear(){ try { Object.keys(localStorage).filter(k => k.startsWith("leancut-draft-" + sid())).forEach(k => localStorage.removeItem(k)); } catch(e){} }
 function markDirty(){ dirty = true; draftSave(); }
@@ -849,7 +859,7 @@ function buildDraft(){
   const local = draftLoad();
   const useLocal = !!(local && local.sets && (!savedHere || local.t > (savedHere.savedAt || 0)));
   draft = {}; done = {}; hints = {}; prevBest = {};
-  const src = useLocal ? local : savedHere; swaps = src && src.swaps ? {...src.swaps} : {};
+  const src = useLocal ? local : savedHere; swaps = src && src.swaps ? {...src.swaps} : {}; later = src && Array.isArray(src.later) ? [...src.later] : [];
   itemsOf(p, swaps).forEach(([k,n]) => {
     const w = KUNIT[EX[k].k].length;
     const have = useLocal ? local.sets[k] : savedHere && savedHere.sets && savedHere.sets[k];
@@ -912,12 +922,12 @@ function exCard(it){
     ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max. Next step: add a light resistance band (stand on it and hold it with the dumbbells), then medium, then heavy. You can also add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
   return `<div class="ex ${allDone?"exdone":""}" data-ex="${k}">
-      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ Swapped in for ${esc(EX[it[4]].n)}</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
+      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ Swapped in for ${esc(EX[it[4]].n)}</span>` : ""}${isLater(it) ? `<span class="swapnote">↓ Moved to later</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
       <div class="sets ${u.length===1?"one":""} ${CD_KINDS.includes(e.k)?"cd":""}">${rows}</div>
       ${swapHtml}
-      <div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
+      <div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}${!isOpt(it) && !allDone ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>
     </div>`;
 }
 function renderExList(){
@@ -994,6 +1004,9 @@ $("#exList").addEventListener("click", e => {
   if (d.chk) { const k = d.chk, i = +d.i; if (!done[k][i]) fillSet(k, i); done[k][i] = !done[k][i]; if (done[k][i]) { ticked = true; if (done[k].every(Boolean)) finished = k; } }
   else if (d.all) { const k = d.all, all = done[k].every(Boolean); draft[k].forEach((_,i) => { if (!all) fillSet(k, i); done[k][i] = !all; }); if (!all) { ticked = true; finished = k; } }
   else if (d.cd) { if (cd.k === d.cd && cd.i === +d.i) cdStop(); else cdStart(d.cd, +d.i); return; }
+  else if (d.later) { const b = d.later, it = items().find(x => baseOf(x) === b), L = it && pairOf(it), grp = L ? items().filter(x => pairOf(x) === L).map(baseOf) : [b];
+    if (grp.some(g => later.includes(g))) later = later.filter(x => !grp.includes(x)); else later.push(b);
+    markDirty(); renderExList(); const c = document.querySelector(`.ex[data-ex="${it ? it[0] : b}"]`); if (c) c.scrollIntoView({block:"center", behavior:"smooth"}); return; }
   else if (d.swap) { swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
   else if (d.pick) { if (d.alt === d.pick) delete swaps[d.pick]; else swaps[d.pick] = d.alt; swapOpen = null; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); return; }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
@@ -1061,7 +1074,7 @@ $("#saveBtn").addEventListener("click", async () => {
   if (minutes == null && tm && tm.date === curDate) minutes = timerMinutes(tm);
   $("#saveBtn").disabled = true;
   try {
-    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, minutes: minutes ?? "", savedAt:Date.now()});
+    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, later:[...later], minutes: minutes ?? "", savedAt:Date.now()});
     if (tm && tm.date === curDate) timerSet(null);
     draftClear(); dirty = false; toast($("#logToast"), minutes ? `Saved · ${minutes} min` : "Saved"); renderLog(); renderTimer();
   }
