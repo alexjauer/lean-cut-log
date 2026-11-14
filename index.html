@@ -112,6 +112,9 @@ body.focusing .tbar{z-index:9;bottom:0;padding-bottom:env(safe-area-inset-bottom
 body.focusing.withbar .focus{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
 .ftoast{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(140px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);border-radius:10px;padding:0 14px;font-size:14px;white-space:nowrap;pointer-events:none}
 .ftoast:empty{display:none}
+.fundo{position:absolute;left:12px;right:12px;bottom:calc(140px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:10px;background:var(--fg);color:var(--bg);border-radius:12px;padding:8px 8px 8px 14px;font-size:14px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.fundo span{flex:1;min-width:0}
+.fundo button{flex:none;background:transparent;color:var(--bg);border-color:color-mix(in srgb, var(--bg) 40%, transparent);padding:6px 14px;font-weight:600}
 .ftoast:not(:empty){padding:8px 14px}
 .fdone{text-align:center;padding:24px 8px}
 .fdone h2{margin:6px 0 4px}
@@ -564,6 +567,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
     <button type="button" class="primary" id="fDone">Done with this →</button>
   </div>
   <span class="toast ftoast" id="fToast" role="status"></span>
+  <div class="fundo" id="fUndo" hidden><span id="fUndoTxt"></span><button type="button" id="fUndoBtn">Undo</button></div>
 </div>
 <div class="tbar" id="tbar" hidden role="timer" aria-live="off">
   <div class="tb-in"><div class="tb-time"><span class="tb-lbl" id="tbarLbl">Workout</span><span class="num" id="tbarTime">0:00</span></div>
@@ -948,7 +952,8 @@ function upInfo(k, n, target){
   const last = lastFor(k, curDate), top = rangeTop(target); if (!last || !top) return null;
   const rows = last.sets.map(r => [num(r[0]), num(r[1])]).filter(r => r[1] != null);
   if (!rows.length || rows.length < Math.min(n, 3) || !rows.every(r => r[1] >= top)) return null;
-  const w = Math.max(...rows.map(r => r[0] || 0)); if (!w) return null;
+  // Only when every set hit the top of the range at the same weight. Dropping weight on a later set means that weight isn't owned yet.
+  const ws = rows.map(r => r[0] || 0), w = Math.min(...ws); if (!w || Math.max(...ws) !== w) return null;
   const inc = HEAVY10.includes(k) ? 10 : 5;
   if (plan().loc === "home" && w + inc > 25) return {max:true, w};
   return {w, next: w + inc};
@@ -1289,6 +1294,7 @@ function focusOpen(){
   focusSave(); document.body.classList.add("focusing"); $("#focus").hidden = false; renderExList(); renderTimer(); renderRestBtn();
 }
 function focusClose(){
+  $("#fUndo").hidden = true; fUndoSnap = null;
   focus.open = false; focusSave(); document.body.classList.remove("focusing"); $("#focus").hidden = true;
   $("#fBody").innerHTML = ""; renderExList(); renderTimer();
 }
@@ -1320,12 +1326,24 @@ function fAnimate(dir, then){
   c.style.transform = `translateX(${dir * 120}%)`; c.style.opacity = "0";
   setTimeout(() => { then(); $("#fBody").scrollTop = 0; }, 230);
 }
+// Undo the last swipe for a few seconds.
+let fUndoSnap = null, fUndoT = null;
+function fUndoOffer(txt){
+  $("#fUndoTxt").textContent = txt; $("#fUndo").hidden = false; $("#fToast").textContent = "";
+  clearTimeout(fUndoT); fUndoT = setTimeout(() => { $("#fUndo").hidden = true; fUndoSnap = null; }, 6000);
+}
+$("#fUndoBtn").addEventListener("click", () => {
+  if (!fUndoSnap) return; const u = fUndoSnap; fUndoSnap = null;
+  focus.fin = u.fin; focus.back = u.back; later = u.later; $("#fUndo").hidden = true; clearTimeout(fUndoT);
+  focusSave(); markDirty(); renderExList(); buzz(false);
+});
+const fSnapState = () => ({fin:[...focus.fin], back:[...focus.back], later:[...later]});
 function fLater(){
   const cur = fCurrent(); if (!cur) return;
   const sameSec = fGroups().filter(g => g.opt === cur.opt && !focus.fin.includes(g.id));
   if (sameSec.length < 2) { toast($("#fToast"), "Nothing else left to do first."); fSnap(); return; }
-  buzz(false);
-  fAnimate(-1, () => {
+  buzz(false); fUndoSnap = fSnapState();
+  fAnimate(-1, () => { fUndoOffer(`${EX[cur.its[0][0]].n}${cur.its.length > 1 ? " superset" : ""} moved to later.`);
     focus.back = focus.back.filter(b => b !== cur.id).concat(cur.id);
     if (!cur.opt && !later.includes(cur.id) && !cur.its.some(it => later.includes(baseOf(it)))) later.push(baseOf(cur.its[0]));
     focusSave(); markDirty(); renderExList();
@@ -1334,11 +1352,11 @@ function fLater(){
 function fDone(){
   const cur = fCurrent(); if (!cur) return;
   const ticks = cur.its.reduce((a,[k]) => a + (done[k] || []).filter(Boolean).length, 0), total = cur.its.reduce((a,[k]) => a + (done[k] || []).length, 0);
-  feedback(false);
+  feedback(false); fUndoSnap = fSnapState();
   fAnimate(1, () => {
     focus.fin.push(cur.id); focusSave(); renderExList();
-    if (!ticks) toast($("#fToast"), "Skipped: no sets checked.");
-    else if (ticks < total) toast($("#fToast"), `Moved on with ${ticks} of ${total} sets checked.`);
+    const nm = EX[cur.its[0][0]].n + (cur.its.length > 1 ? " superset" : "");
+    fUndoOffer(!ticks ? `Skipped ${nm}: no sets checked.` : ticks < total ? `${nm} done with ${ticks} of ${total} sets checked.` : `${nm} done.`);
   });
 }
 function fSnap(){ const c = $("#fCard"); if (c) { c.style.transform = ""; c.style.opacity = ""; c.classList.remove("l","r"); } }
