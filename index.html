@@ -83,6 +83,43 @@ button.danger{color:var(--plate)}
 .sets .n{font-family:var(--f-num);font-size:12px;color:var(--muted);text-align:center}
 .sets input{padding:8px;text-align:center;font-family:var(--f-num)}
 .ex-foot{display:flex;gap:4px}
+.focus{position:fixed;inset:0;z-index:8;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+body.focusing{overflow:hidden}
+body.focusing .tbar{z-index:9;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+.fhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.fhead button{flex:none;padding:6px 8px;font-size:14px}
+.fprog{flex:1;min-width:0;text-align:center;font-size:13px}
+.fdots{display:flex;justify-content:center;gap:4px;margin-top:4px;flex-wrap:wrap}
+.fdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.fdots i.f{background:var(--good)}
+.fdots i.c{background:var(--accent);transform:scale(1.3)}
+.fdots i.o{opacity:.5}
+.fbody{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:12px 12px 16px;-webkit-overflow-scrolling:touch}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;touch-action:pan-y;transition:transform .25s ease,opacity .25s ease;position:relative}
+.fcard.drag{transition:none}
+.fcard:has(.ss){background:none;border:0;padding:0}
+.fcard:has(.ss)::before,.fcard:has(.ss)::after{top:22px}
+.fcard .ss{margin:0}
+.fcard [data-later]{display:none}
+.fcard::before,.fcard::after{position:absolute;top:14px;font-size:13px;font-weight:600;opacity:var(--sw,0);pointer-events:none}
+.fcard.l::after{content:"Do later ←";right:14px;color:var(--carb)}
+.fcard.r::before{content:"→ Done";left:14px;color:var(--good)}
+.fsec{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.fhint{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
+.ffoot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--bg)}
+.ffoot button{flex:1;padding:12px 8px}
+.ffoot button.primary{flex:1.6}
+body.focusing.withbar .focus{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+.ftoast{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(140px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);border-radius:10px;padding:0 14px;font-size:14px;white-space:nowrap;pointer-events:none}
+.ftoast:empty{display:none}
+.ftoast:not(:empty){padding:8px 14px}
+.fdone{text-align:center;padding:24px 8px}
+.fdone h2{margin:6px 0 4px}
+.fdone .big{font-size:44px}
+.fstats{display:flex;justify-content:center;gap:18px;margin:16px 0}
+.fstats div{display:flex;flex-direction:column;align-items:center}
+.fstats b{font-family:var(--f-num);font-size:22px}
+.fdone .row2{display:flex;flex-direction:column;gap:8px;max-width:320px;margin:16px auto 0}
 .stp{display:flex;align-items:stretch;min-width:0}
 .stp input{min-width:0;flex:1;border-radius:0;padding:8px 2px}
 .stb{flex:none;width:26px;padding:0;font-size:18px;line-height:1;color:var(--muted);border-radius:0}
@@ -333,7 +370,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <div class="days" id="dayPick" role="group" aria-label="Pick a day"></div>
       <p class="sub" id="dayDesc" style="margin:10px 0 0"></p>
       <div class="locpick" id="locPick" role="group" aria-label="Where you're training" hidden></div>
-      <button type="button" id="timerTop" style="margin-top:10px;width:100%">Start timer</button>
+      <button type="button" class="primary" id="timerTop" style="margin-top:10px;width:100%">▶ Start workout</button>
       <div class="fbrow"><span class="label">When you check a set</span><button type="button" id="fbSound"></button><button type="button" id="fbBuzz"></button></div>
     </div>
     <div class="panel" id="exList"></div>
@@ -515,6 +552,19 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
   </section>
 </main>
 
+<div class="focus" id="focus" hidden role="dialog" aria-label="Workout, one exercise at a time">
+  <div class="fhead">
+    <button type="button" class="ghost" id="fClose">☰ List</button>
+    <div class="fprog"><b id="fCount"></b><div class="fdots" id="fDots" aria-hidden="true"></div></div>
+    <button type="button" class="ghost" id="fRest"></button>
+  </div>
+  <div class="fbody" id="fBody"></div>
+  <div class="ffoot" id="fFoot">
+    <button type="button" id="fLater">← Do later</button>
+    <button type="button" class="primary" id="fDone">Done with this →</button>
+  </div>
+  <span class="toast ftoast" id="fToast" role="status"></span>
+</div>
 <div class="tbar" id="tbar" hidden role="timer" aria-live="off">
   <div class="tb-in"><div class="tb-time"><span class="tb-lbl" id="tbarLbl">Workout</span><span class="num" id="tbarTime">0:00</span></div>
   <button type="button" id="tbarPause">❚❚ Pause</button><button type="button" class="primary" id="tbarEnd">Finish</button></div>
@@ -822,6 +872,7 @@ addEventListener("hashchange", () => { route(); window.scrollTo(0,0); });
 let curDate = today(), curDay = dayForDate(curDate), curLoc = null, locChosen = false;
 let draft = null, done = {}; // draft: { exKey: [[a,b],...] } · done: { exKey: [true,false,...] }
 let dirty = false, focusAfter = null, unlocked = false;
+const focus = {open:false, date:null, fin:[], back:[], opt:false, ended:null}; // one-at-a-time workout view
 const sid = () => curDate + "_" + curDay;
 const LOCNAME = {gym:"Gym", home:"Home", rest:"Recovery"};
 const sessionLoc = s => s.loc || (DAYS[s.day] ? DAYS[s.day].loc : "gym");
@@ -959,7 +1010,7 @@ function renderDayPick(){
   $("#locPick").hidden = !D.alt;
   if (D.alt) $("#locPick").innerHTML = `<span class="label">Training at</span>` + [D.loc, D.alt.loc].map(l => `<button type="button" data-loc="${l}" aria-pressed="${l===p.loc}">${LOCNAME[l]}</button>`).join("");
 }
-function goDate(ds){ curDate = ds; curDay = dayForDate(ds); locChosen = false; dirty = false; unlocked = false; renderLog(); renderTimer(); renderWater(); }
+function goDate(ds){ if (focus.open) focusClose(); curDate = ds; curDay = dayForDate(ds); locChosen = false; dirty = false; unlocked = false; renderLog(); renderTimer(); renderWater(); }
 // +/− step: dumbbells 2.5 lb, barbells/machines/cables 5 lb, reps and rounds 1, minutes 1, seconds 5.
 const DB_GYM = ["csrow","incpress","inccurl"];
 function stepOf(k, j){
@@ -1018,7 +1069,8 @@ function renderExList(){
   const L = wkLocked();
   $("#exList").classList.toggle("locked", L);
   $("#dur").readOnly = L;
-  $("#exList").innerHTML = (L ? `<div class="lockban"><span>🔒 <b>Workout finished and saved.</b> Fields are locked so nothing changes by accident.</span><button type="button" class="ghost" data-unlock="1">✎ Edit</button></div>` : "") + (hasPairs ? `<p class="sub pairnote">Boxed exercises are supersets: alternate between the two, then rest. Letters only show the order (A, then B). Everything else is done on its own with normal rest.</p>` : "") +
+  if (focus.open) { $("#exList").innerHTML = ""; renderFocus(group); }
+  else $("#exList").innerHTML = (L ? `<div class="lockban"><span>🔒 <b>Workout finished and saved.</b> Fields are locked so nothing changes by accident.</span><button type="button" class="ghost" data-unlock="1">✎ Edit</button></div>` : "") + (hasPairs ? `<p class="sub pairnote">Boxed exercises are supersets: alternate between the two, then rest. Letters only show the order (A, then B). Everything else is done on its own with normal rest.</p>` : "") +
     group(ess) +
     (opt.length ? `<div class="opthead"><h3>If you have time</h3><span class="sub">~${r5(opt.reduce((a,it) => a + itemMin(it), 0))} min · fine to skip on busy days</span></div>` + group(opt) : "");
   openSet.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
@@ -1053,10 +1105,11 @@ $("#locPick").addEventListener("click", e => {
 $("#wkPrev").addEventListener("click", () => goDate(addDays(curDate, -7)));
 $("#wkNext").addEventListener("click", () => goDate(addDays(curDate, 7)));
 $("#wkToday").addEventListener("click", () => goDate(today()));
-$("#exList").addEventListener("input", e => {
+const exInputH = e => {
   const t = e.target; if (!t.dataset.k) return;
   draft[t.dataset.k][+t.dataset.i][+t.dataset.j] = t.value; markDirty();
-});
+};
+$("#exList").addEventListener("input", exInputH);
 function fillSet(k, i){
   const kind = EX[k].k, r = draft[k][i], h = hints[k] && hints[k][i];
   const it = items().find(x => x[0] === k), tnum = (String(it ? it[2] : "").match(/\d+/) || [])[0];
@@ -1071,7 +1124,7 @@ function fillSet(k, i){
   if (miss != null && !focusAfter) focusAfter = `in-${k}-${i}-${miss}`;
 }
 function setReady(k, i){ const r = draft[k][i]; return (EX[k].k === "lift" ? (k === "pullup" ? [1] : [0,1]) : [0]).every(j => r[j] !== "" && r[j] != null); }
-$("#exList").addEventListener("click", e => {
+const exClick = e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.unlock) { unlocked = true; renderExList(); feedback(false); return; }
   if (wkLocked() || b.disabled) return;
@@ -1109,8 +1162,10 @@ $("#exList").addEventListener("click", e => {
   if (ticked && !PR_SKIP.includes(kk) && prevBest[kk]) { const now = sessionBestDone(kk); if (better(now, prevBest[kk]) && better(now, bestBeforeTap)) pr = now; }
   markDirty(); renderExList();
   if (ticked) feedback(pr ? "pr" : !!finished);
+  if (ticked && d.chk && focus.open) restAfter(kk);
   if (finished || pr) celebrate(kk, rect.left + rect.width/2, rect.top + rect.height/2, !essBefore && essentialsDone(), pr);
-});
+};
+$("#exList").addEventListener("click", exClick);
 function essentialsDone(){ return items().filter(it => !isOpt(it)).every(([k]) => done[k] && done[k].length && done[k].every(Boolean)); }
 
 /* ---------- celebration: confetti when an exercise (or the whole day) is done ---------- */
@@ -1149,7 +1204,8 @@ function celebrate(k, x, y, allDay, pr){
   }
 }
 function toast(el, msg, err){ el.textContent = msg; el.classList.toggle("err", !!err); clearTimeout(el._t); el._t = setTimeout(() => el.textContent = "", 3500); }
-$("#saveBtn").addEventListener("click", async () => {
+$("#saveBtn").addEventListener("click", () => saveWorkout());
+async function saveWorkout(){
   const sets = {}, doneOut = {};
   for (const [k, rows] of Object.entries(draft)) {
     const clean = rows.map(r => r.map(v => num(v)));
@@ -1159,7 +1215,7 @@ $("#saveBtn").addEventListener("click", async () => {
     sets[k] = kept.map(r => r.map(v => v ?? ""));
     doneOut[k] = (done[k] || []).filter((x,i) => keep[i]);
   }
-  if (!Object.keys(sets).length) { toast($("#logToast"), "Enter at least one set first.", true); return; }
+  if (!Object.keys(sets).length) { toast($("#logToast"), "Enter at least one set first.", true); return false; }
   let minutes = num($("#dur").value);
   const tm = timerGet();
   if (minutes == null && tm && tm.date === curDate) minutes = timerMinutes(tm);
@@ -1169,9 +1225,9 @@ $("#saveBtn").addEventListener("click", async () => {
     if (tm && tm.date === curDate) timerSet(null);
     draftClear(); dirty = false; unlocked = false; toast($("#logToast"), minutes ? `Saved · ${minutes} min` : "Saved"); renderLog(); renderTimer();
   }
-  catch(err){ toast($("#logToast"), "Couldn't save. Check your connection and try again.", true); }
-  $("#saveBtn").disabled = false;
-});
+  catch(err){ toast($("#logToast"), "Couldn't save. Check your connection and try again.", true); $("#saveBtn").disabled = false; return false; }
+  $("#saveBtn").disabled = false; return true;
+}
 
 /* ---------- workout timer (kept on this device): start, pause, resume, finish ---------- */
 const TK = "leancut-timer";
@@ -1192,23 +1248,164 @@ function timerFinish(){
 }
 function renderTimer(){
   const tm = timerGet(), active = !!tm, here = active && tm.date === curDate;
-  $("#timerTop").hidden = active;
+  $("#timerTop").hidden = (active && !here) || wkLocked();
+  $("#timerTop").textContent = here ? "▶ Resume workout" : "▶ Start workout";
   $("#timerBtn").textContent = here ? "Finish timer" : "Start timer";
   $("#timerBtn").hidden = active && !here;
   const bar = $("#tbar"); bar.hidden = !active || cd.k != null;
   document.body.classList.toggle("withbar", active || cd.k != null);
   if (!active) return;
   $("#tbarTime").textContent = mmss(timerMs(tm));
+  $("#tbarEnd").textContent = focus.open ? "End workout" : "Finish";
   $("#tbarLbl").textContent = tm.pausedAt ? "Paused" : tm.date === today() ? "Workout" : "Workout · " + fDate(tm.date);
   $("#tbarPause").textContent = tm.pausedAt ? "▶ Resume" : "❚❚ Pause";
   bar.classList.toggle("paused", !!tm.pausedAt);
 }
-$("#timerTop").addEventListener("click", timerStart);
+$("#timerTop").addEventListener("click", () => { const tm = timerGet(); if (!tm) timerStart(); focusOpen(); });
 $("#timerBtn").addEventListener("click", () => { const tm = timerGet(); tm && tm.date === curDate ? timerFinish() : timerStart(); });
 $("#tbarPause").addEventListener("click", timerPause);
 const setNavH = () => { const n = document.querySelector("nav.tabs"); if (n) document.documentElement.style.setProperty("--navh", n.offsetHeight + "px"); };
 addEventListener("resize", setNavH); setNavH();
-$("#tbarEnd").addEventListener("click", timerFinish);
+$("#tbarEnd").addEventListener("click", () => focus.open ? focusEnd() : timerFinish());
+
+/* ---------- focus view: one exercise (or superset) at a time ---------- */
+const FK = "leancut-focus";
+function focusSave(){ try { localStorage.setItem(FK, JSON.stringify({open:focus.open, date:focus.date, fin:focus.fin, back:focus.back, opt:focus.opt})); } catch(e){} }
+function focusLoad(){ try { const v = JSON.parse(localStorage.getItem(FK) || "null"); return v && v.date === curDate ? v : null; } catch(e){ return null; } }
+// Groups in the day's current order: a superset is one group.
+function fGroups(){
+  const its = items(), out = [];
+  its.forEach(it => { const L = pairOf(it), last = out[out.length-1];
+    if (L && last && pairOf(last.its[0]) === L && isOpt(last.its[0]) === isOpt(it)) last.its.push(it); else out.push({id:baseOf(it), opt:isOpt(it), its:[it]}); });
+  const ord = list => [...list.filter(g => !focus.back.includes(g.id)), ...focus.back.map(b => list.find(g => g.id === b)).filter(Boolean)];
+  return [...ord(out.filter(g => !g.opt)), ...ord(out.filter(g => g.opt))];
+}
+function fCurrent(){ const gs = fGroups(); return gs.find(g => !focus.fin.includes(g.id)) || null; }
+function focusOpen(){
+  const v = focusLoad();
+  Object.assign(focus, {open:true, date:curDate, fin:v ? v.fin : [], back:v ? v.back : [], opt:v ? v.opt : false, ended:null});
+  // Anything already finished in the list counts as done here.
+  fGroups().forEach(g => { if (g.its.every(([k]) => done[k] && done[k].length && done[k].every(Boolean)) && !focus.fin.includes(g.id)) focus.fin.push(g.id); });
+  focusSave(); document.body.classList.add("focusing"); $("#focus").hidden = false; renderExList(); renderTimer(); renderRestBtn();
+}
+function focusClose(){
+  focus.open = false; focusSave(); document.body.classList.remove("focusing"); $("#focus").hidden = true;
+  $("#fBody").innerHTML = ""; renderExList(); renderTimer();
+}
+function renderFocus(group){
+  const gs = fGroups(), cur = fCurrent(), ess = gs.filter(g => !g.opt), essLeft = ess.filter(g => !focus.fin.includes(g.id));
+  const n = cur ? gs.findIndex(g => g.id === cur.id) + 1 : gs.length;
+  $("#fDots").hidden = !!focus.ended;
+  $("#fDots").innerHTML = gs.map(g => `<i class="${focus.fin.includes(g.id) ? "f" : cur && g.id === cur.id ? "c" : ""} ${g.opt ? "o" : ""}"></i>`).join("");
+  $("#fCount").textContent = focus.ended ? "Workout saved" : cur ? `${cur.opt ? "Optional · " : ""}${n} of ${gs.length}` : "All done";
+  let html;
+  if (focus.ended) html = focus.ended;
+  else if (!cur || (cur.opt && !focus.opt)) {
+    const optLeft = gs.filter(g => g.opt && !focus.fin.includes(g.id));
+    html = `<div class="fdone"><div class="big">🎉</div><h2>${essLeft.length ? "" : "Main exercises done!"}</h2>
+      <p class="sub">${optLeft.length ? `${optLeft.length} optional exercise${optLeft.length > 1 ? "s" : ""} left, about ${r5(optLeft.reduce((a,g) => a + g.its.reduce((b,it) => b + itemMin(it), 0), 0))} min.` : "That's everything for today."}</p>
+      <div class="row2">${optLeft.length ? `<button type="button" data-fopt="1">Keep going: optional</button>` : ""}<button type="button" class="primary" data-fend="1">End workout and save</button></div></div>`;
+  } else {
+    const box = group(cur.its);
+    html = `<p class="fsec">${cur.opt ? "If you have time" : cur.its.length > 1 ? "Superset · alternate one set of each" : "Next up"}</p><div class="fcard" id="fCard">${box}</div><p class="fhint">Swipe left to do it later · swipe right when you're done</p>`;
+  }
+  const atBottom = !cur || (cur.opt && !focus.opt) || focus.ended;
+  $("#fFoot").hidden = !!atBottom;
+  const body = $("#fBody"), keepOpen = new Set([...body.querySelectorAll("details[open]")].map(d => d.id));
+  body.innerHTML = html;
+  keepOpen.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
+}
+function fAnimate(dir, then){
+  const c = $("#fCard"); if (!c) { then(); return; }
+  c.style.transform = `translateX(${dir * 120}%)`; c.style.opacity = "0";
+  setTimeout(() => { then(); $("#fBody").scrollTop = 0; }, 230);
+}
+function fLater(){
+  const cur = fCurrent(); if (!cur) return;
+  const sameSec = fGroups().filter(g => g.opt === cur.opt && !focus.fin.includes(g.id));
+  if (sameSec.length < 2) { toast($("#fToast"), "Nothing else left to do first."); fSnap(); return; }
+  buzz(false);
+  fAnimate(-1, () => {
+    focus.back = focus.back.filter(b => b !== cur.id).concat(cur.id);
+    if (!cur.opt && !later.includes(cur.id) && !cur.its.some(it => later.includes(baseOf(it)))) later.push(baseOf(cur.its[0]));
+    focusSave(); markDirty(); renderExList();
+  });
+}
+function fDone(){
+  const cur = fCurrent(); if (!cur) return;
+  const ticks = cur.its.reduce((a,[k]) => a + (done[k] || []).filter(Boolean).length, 0), total = cur.its.reduce((a,[k]) => a + (done[k] || []).length, 0);
+  feedback(false);
+  fAnimate(1, () => {
+    focus.fin.push(cur.id); focusSave(); renderExList();
+    if (!ticks) toast($("#fToast"), "Skipped: no sets checked.");
+    else if (ticks < total) toast($("#fToast"), `Moved on with ${ticks} of ${total} sets checked.`);
+  });
+}
+function fSnap(){ const c = $("#fCard"); if (c) { c.style.transform = ""; c.style.opacity = ""; c.classList.remove("l","r"); } }
+async function focusEnd(){
+  if (cd.k === "_rest") cdStop();
+  const tm = timerGet(); if (tm && tm.date === curDate) $("#dur").value = timerMinutes(tm);
+  let sets = 0, prs = 0; Object.keys(draft).forEach(k => (done[k] || []).forEach((x,i) => { if (x) { sets++; if (isPR(k, i)) prs++; } }));
+  const mins = num($("#dur").value);
+  const ok = await saveWorkout();
+  if (!ok) { toast($("#fToast"), "Check off at least one set before ending.", true); return; }
+  focus.ended = `<div class="fdone"><div class="big">💪</div><h2>Workout saved</h2><p class="sub">${esc(pDate(curDate).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}</p>
+    <div class="fstats"><div><b>${mins ?? "–"}</b><span class="sub">min</span></div><div><b>${sets}</b><span class="sub">sets</span></div><div><b>${prs}</b><span class="sub">PR${prs === 1 ? "" : "s"}</span></div></div>
+    <div class="row2"><button type="button" class="primary" data-fclose="1">Close</button></div></div>`;
+  focus.fin = []; focus.back = []; focus.opt = false; focusSave();
+  confetti(innerWidth * 0.5, innerHeight * 0.4, 90, Math.PI); feedback(true);
+  renderExList(); renderTimer();
+}
+function renderRestBtn(){ $("#fRest").textContent = FB.rest ? `Rest ${FB.rest}s` : "Rest off"; $("#fRest").setAttribute("aria-label", FB.rest ? `Rest timer ${FB.rest} seconds; tap to change` : "Rest timer off; tap to turn on"); }
+$("#fRest").addEventListener("click", () => {
+  const opts = [0, 60, 90, 120], i = opts.indexOf(FB.rest || 0); FB.rest = opts[(i + 1) % opts.length];
+  try { localStorage.setItem("leancut-fb", JSON.stringify(FB)); } catch(e){} renderRestBtn(); buzz(false);
+  if (!FB.rest && cd.k === "_rest") cdStop();
+});
+// Rest countdown after a checked set; in a superset, only after the last exercise of the round.
+function restAfter(k){
+  if (!FB.rest || (cd.k != null && cd.k !== "_rest")) return;
+  const cur = fCurrent(); if (!cur) return;
+  const idx = cur.its.findIndex(it => it[0] === k); if (idx < 0 || idx !== cur.its.length - 1) return;
+  if (!["lift","bw"].includes(EX[k].k)) return;
+  Object.assign(cd, {k:"_rest", i:0, total:FB.rest, end:Date.now() + FB.rest*1000, pausedLeft:null});
+  $("#cdName").textContent = "Rest"; renderCd(); renderTimer();
+}
+$("#fClose").addEventListener("click", focusClose);
+$("#fLater").addEventListener("click", fLater);
+$("#fDone").addEventListener("click", fDone);
+$("#fBody").addEventListener("input", exInputH);
+$("#fBody").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (b && b.dataset.fopt) { focus.opt = true; focusSave(); renderExList(); return; }
+  if (b && b.dataset.fend) { focusEnd(); return; }
+  if (b && b.dataset.fclose) { focusClose(); window.scrollTo(0,0); return; }
+  exClick(e);
+});
+// Swipe the card: left = do later, right = done with it.
+(() => {
+  let sx = 0, sy = 0, dx = 0, on = false, horiz = null, card = null;
+  const body = $("#fBody");
+  body.addEventListener("pointerdown", e => {
+    card = e.target.closest(".fcard"); if (!card || e.target.closest("input,textarea,select")) { card = null; return; }
+    sx = e.clientX; sy = e.clientY; dx = 0; on = true; horiz = null;
+  });
+  body.addEventListener("pointermove", e => {
+    if (!on || !card) return;
+    const mx = e.clientX - sx, my = e.clientY - sy;
+    if (horiz == null && Math.hypot(mx, my) > 10) horiz = Math.abs(mx) > Math.abs(my) * 1.3;
+    if (!horiz) return;
+    dx = mx; card.classList.add("drag"); card.style.transform = `translateX(${dx}px) rotate(${dx/40}deg)`;
+    card.classList.toggle("l", dx < 0); card.classList.toggle("r", dx > 0); card.style.setProperty("--sw", Math.min(1, Math.abs(dx)/90));
+  });
+  const end = () => {
+    if (!on || !card) return; on = false; card.classList.remove("drag");
+    if (horiz && dx < -90) fLater(); else if (horiz && dx > 90) fDone(); else fSnap();
+    if (horiz) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; body.addEventListener("click", stop, {capture:true, once:true}); setTimeout(() => body.removeEventListener("click", stop, {capture:true}), 50); }
+    card = null;
+  };
+  body.addEventListener("pointerup", end); body.addEventListener("pointercancel", () => { on = false; fSnap(); card = null; });
+})();
 
 /* ---------- countdown for timed exercises (walks, stretches, planks…) ---------- */
 const cd = {k:null, i:null, end:0, total:0, pausedLeft:null, wake:null};
@@ -1234,6 +1431,7 @@ function cdStart(k, i){
 function cdLeft(){ return cd.pausedLeft != null ? cd.pausedLeft : Math.max(0, cd.end - Date.now()); }
 function cdStop(){ cd.k = null; cdWake(false); renderCd(); renderTimer(); }
 function cdDone(){
+  if (cd.k === "_rest") { cdStop(); beep(true); buzz(true); toast($("#fToast"), "Rest's up. Next set!"); return; }
   const k = cd.k, i = cd.i, kind = EX[k].k;
   if (draft[k] && draft[k][i]) {
     if (draft[k][i][0] === "" || draft[k][i][0] == null) draft[k][i][0] = kind === "min" ? Math.round(cd.total/60) : cd.total;
@@ -2017,7 +2215,7 @@ $("#bkImport").addEventListener("change", async e => {
 
 
 /* ---------- set feedback: haptic tap + short sound ---------- */
-const FB = (() => { const v = {sound:true, buzz:true}; try { Object.assign(v, JSON.parse(localStorage.getItem("leancut-fb") || "{}")); } catch(e){} return v; })();
+const FB = (() => { const v = {sound:true, buzz:true, rest:0}; try { Object.assign(v, JSON.parse(localStorage.getItem("leancut-fb") || "{}")); } catch(e){} return v; })();
 function renderFb(){
   $("#fbSound").textContent = "Sound " + (FB.sound ? "on" : "off"); $("#fbSound").setAttribute("aria-pressed", FB.sound);
   $("#fbBuzz").textContent = "Vibrate " + (FB.buzz ? "on" : "off"); $("#fbBuzz").setAttribute("aria-pressed", FB.buzz);
