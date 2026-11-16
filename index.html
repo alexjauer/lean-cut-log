@@ -98,12 +98,28 @@ body.focusing .tbar{z-index:9;bottom:0;padding-bottom:env(safe-area-inset-bottom
 .fcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;touch-action:pan-y;transition:transform .25s ease,opacity .25s ease;position:relative}
 .fcard.drag{transition:none}
 .fcard:has(.ss){background:none;border:0;padding:0}
-.fcard:has(.ss)::before,.fcard:has(.ss)::after{top:22px}
+.fwrap.r .fcard:has(.ss) .ss{border-color:var(--good)}
+.fwrap.l .fcard:has(.ss) .ss{border-color:var(--carb)}
+.exnote{width:100%;margin-top:8px;font-size:16px;resize:vertical}
+.exnote-ro,.lastnote{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.lastnote b{color:var(--fg);font-weight:500}
+#wnote{width:100%;font-size:16px;resize:vertical}
+.fnote{max-width:360px;margin:18px auto 0;text-align:left}
+.fnote textarea{width:100%;font-size:16px}
+.fnote .skipline{font-size:13px;color:var(--muted);margin:0 0 6px}
 .fcard .ss{margin:0}
 .fcard [data-later]{display:none}
-.fcard::before,.fcard::after{position:absolute;top:14px;font-size:13px;font-weight:600;opacity:var(--sw,0);pointer-events:none}
-.fcard.l::after{content:"Do later ←";right:14px;color:var(--carb)}
-.fcard.r::before{content:"→ Done";left:14px;color:var(--good)}
+.fwrap{position:relative}
+.fbg{position:absolute;inset:0;border-radius:16px;display:flex;align-items:flex-start;justify-content:space-between;padding:28px 22px;opacity:0;font-weight:700;font-size:20px;color:#fff;pointer-events:none}
+.fwrap.r .fbg{background:var(--good);opacity:var(--sw,0)}
+.fwrap.l .fbg{background:var(--carb);opacity:var(--sw,0)}
+.fbg span{display:flex;align-items:center;gap:8px;transform:scale(calc(.8 + var(--sw,0) * .3));transition:transform .1s}
+.fwrap.r .fbg .fbr,.fwrap.l .fbg .fbl{visibility:hidden}
+.fwrap.go .fbg span{transform:scale(1.25)}
+.fcard{box-shadow:0 0 0 calc(var(--sw,0) * 3px) var(--swc,transparent)}
+.fwrap.r .fcard{--swc:var(--good)}
+.fwrap.l .fcard{--swc:var(--carb)}
+.fcard:has(.ss){box-shadow:none}
 .fsec{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
 .fhint{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
 .ffoot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--bg)}
@@ -380,6 +396,9 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
     <div class="panel timebox">
       <div class="field"><label class="label" for="dur">Workout time (min)</label><input type="number" inputmode="numeric" min="1" max="300" id="dur" placeholder="e.g. 62"></div>
       <button type="button" id="timerBtn">Start timer</button>
+    </div>
+    <div class="panel">
+      <div class="field"><label class="label" for="wnote">Workout notes</label><textarea id="wnote" rows="3" placeholder="How you felt, why something was skipped, anything to change next time"></textarea></div>
     </div>
     <div class="savebar">
       <button class="primary" id="saveBtn">Save workout</button>
@@ -875,7 +894,7 @@ addEventListener("hashchange", () => { route(); window.scrollTo(0,0); });
 /* ---------- LOG ---------- */
 let curDate = today(), curDay = dayForDate(curDate), curLoc = null, locChosen = false;
 let draft = null, done = {}; // draft: { exKey: [[a,b],...] } · done: { exKey: [true,false,...] }
-let dirty = false, focusAfter = null, unlocked = false;
+let dirty = false, focusAfter = null, unlocked = false, notes = {}, wnote = "", noteOpen = new Set();
 const focus = {open:false, date:null, fin:[], back:[], opt:false, ended:null}; // one-at-a-time workout view
 const sid = () => curDate + "_" + curDay;
 const LOCNAME = {gym:"Gym", home:"Home", rest:"Recovery"};
@@ -899,7 +918,7 @@ const isLater = it => { const L = pairOf(it), its = itemsOf(plan(), swaps); cons
 
 /* unsaved work is kept on this device until you save */
 const DK = () => "leancut-draft-" + sid() + "-" + plan().loc;
-function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({sets:draft, done, swaps, later, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
+function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({sets:draft, done, swaps, later, notes, note:wnote, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
 function draftLoad(){ try { return JSON.parse(localStorage.getItem(DK()) || "null"); } catch(e){ return null; } }
 function draftClear(){ try { Object.keys(localStorage).filter(k => k.startsWith("leancut-draft-" + sid())).forEach(k => localStorage.removeItem(k)); } catch(e){} }
 function markDirty(){ dirty = true; draftSave(); }
@@ -938,8 +957,9 @@ function lastFor(key, beforeDate){
     if (id === sid() || s.date > beforeDate) continue;
     const sets = s.sets && s.sets[key];
     if (!(sets && sets.some(r => r.some(v => v != null && v !== "")))) continue;
-    if (s.day === curDay && sessionLoc(s) === loc) return {date:s.date, sets};
-    if (!any) any = {date:s.date, sets};
+    const note = s.notes && s.notes[key] || "";
+    if (s.day === curDay && sessionLoc(s) === loc) return {date:s.date, sets, note};
+    if (!any) any = {date:s.date, sets, note};
   }
   return any;
 }
@@ -972,6 +992,7 @@ function buildDraft(){
   const useLocal = !!(local && local.sets && (!savedHere || local.t > (savedHere.savedAt || 0)));
   draft = {}; done = {}; hints = {}; prevBest = {};
   const src = useLocal ? local : savedHere; swaps = src && src.swaps ? {...src.swaps} : {}; later = src && Array.isArray(src.later) ? [...src.later] : [];
+  notes = src && src.notes ? {...src.notes} : {}; wnote = src && src.note ? src.note : ""; noteOpen = new Set();
   itemsOf(p, swaps).forEach(([k,n]) => {
     const w = KUNIT[EX[k].k].length;
     const have = useLocal ? local.sets[k] : savedHere && savedHere.sets && savedHere.sets[k];
@@ -991,6 +1012,7 @@ function buildDraft(){
       });
     }
   });
+  $("#wnote").value = wnote;
   $("#dur").value = useLocal ? (local.dur || "") : savedHere && num(savedHere.minutes) ? savedHere.minutes : "";
   dirty = useLocal;
 }
@@ -1051,9 +1073,11 @@ function exCard(it){
       <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ Swapped in for ${esc(EX[it[4]].n)}</span>` : ""}${isLater(it) ? `<span class="swapnote">↓ Moved to later</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
+      ${last && last.note ? `<p class="lastnote">📝 Last time: <b>${esc(last.note)}</b></p>` : ""}
       <div class="sets ${u.length===1?"one":""} ${CD_KINDS.includes(e.k)?"cd":""}">${rows}</div>
+      ${L ? (notes[k] ? `<p class="exnote-ro">📝 ${esc(notes[k])}</p>` : "") : (notes[k] || noteOpen.has(k)) ? `<textarea class="exnote" data-note="${k}" rows="2" placeholder="Note: how it felt, why you stopped, what to change…" aria-label="Note for ${esc(e.n)}">${esc(notes[k] || "")}</textarea>` : ""}
       ${L ? "" : swapHtml}
-      ${L ? "" : `<div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button><button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
+      ${L ? "" : `<div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button>${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}<button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
     </div>`;
 }
 function renderExList(){
@@ -1073,7 +1097,7 @@ function renderExList(){
   };
   const L = wkLocked();
   $("#exList").classList.toggle("locked", L);
-  $("#dur").readOnly = L;
+  $("#dur").readOnly = L; $("#wnote").readOnly = L;
   if (focus.open) { $("#exList").innerHTML = ""; renderFocus(group); }
   else $("#exList").innerHTML = (L ? `<div class="lockban"><span>🔒 <b>Workout finished and saved.</b> Fields are locked so nothing changes by accident.</span><button type="button" class="ghost" data-unlock="1">✎ Edit</button></div>` : "") + (hasPairs ? `<p class="sub pairnote">Boxed exercises are supersets: alternate between the two, then rest. Letters only show the order (A, then B). Everything else is done on its own with normal rest.</p>` : "") +
     group(ess) +
@@ -1091,7 +1115,7 @@ function renderHist(){
   $("#hist").innerHTML = list.length ? list.map(([id,s]) => {
     const n = Object.values(s.sets||{}).filter(sets => sets.some(r => r.some(v => v !== "" && v != null))).length;
     const p = DAYS[s.day] ? plan(s.day, sessionLoc(s)) : null;
-    return `<button type="button" data-open="${esc(id)}"><span>${fDate(s.date)} · ${esc(p ? p.d.split(" · ")[0] : s.day)}${p && DAYS[s.day].alt ? " · " + LOCNAME[p.loc] : ""}</span><span class="sub num">${n} exercises${num(s.minutes) ? " · " + s.minutes + " min" : ""}</span></button>`;
+    return `<button type="button" data-open="${esc(id)}"><span>${fDate(s.date)} · ${esc(p ? p.d.split(" · ")[0] : s.day)}${p && DAYS[s.day].alt ? " · " + LOCNAME[p.loc] : ""}</span><span class="sub num">${n} exercises${num(s.minutes) ? " · " + s.minutes + " min" : ""}${s.note ? " · 📝" : ""}</span></button>`;
   }).join("") : `<p class="empty">Workouts you save show up here. Pick a day above, fill in the weight and reps for each set, then tap Save workout.</p>`;
 }
 function renderLog(){
@@ -1111,7 +1135,8 @@ $("#wkPrev").addEventListener("click", () => goDate(addDays(curDate, -7)));
 $("#wkNext").addEventListener("click", () => goDate(addDays(curDate, 7)));
 $("#wkToday").addEventListener("click", () => goDate(today()));
 const exInputH = e => {
-  const t = e.target; if (!t.dataset.k) return;
+  const t = e.target;
+  if (t.dataset.note) { notes[t.dataset.note] = t.value; markDirty(); return; } if (!t.dataset.k) return;
   draft[t.dataset.k][+t.dataset.i][+t.dataset.j] = t.value; markDirty();
 };
 $("#exList").addEventListener("input", exInputH);
@@ -1156,6 +1181,7 @@ const exClick = e => {
   else if (d.later) { const b = d.later, it = items().find(x => baseOf(x) === b), L = it && pairOf(it), grp = L ? items().filter(x => pairOf(x) === L).map(baseOf) : [b];
     if (grp.some(g => later.includes(g))) later = later.filter(x => !grp.includes(x)); else later.push(b);
     markDirty(); renderExList(); const c = document.querySelector(`.ex[data-ex="${it ? it[0] : b}"]`); if (c) c.scrollIntoView({block:"center", behavior:"smooth"}); return; }
+  else if (d.noteadd) { noteOpen.add(d.noteadd); renderExList(); const t = document.querySelector(`[data-note="${d.noteadd}"]`); if (t) t.focus(); return; }
   else if (d.swap) { swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
   else if (d.pick) { if (d.alt === d.pick) delete swaps[d.pick]; else swaps[d.pick] = d.alt; swapOpen = null; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); return; }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
@@ -1226,7 +1252,7 @@ async function saveWorkout(){
   if (minutes == null && tm && tm.date === curDate) minutes = timerMinutes(tm);
   $("#saveBtn").disabled = true;
   try {
-    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, later:[...later], minutes: minutes ?? "", savedAt:Date.now()});
+    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, later:[...later], notes:Object.fromEntries(Object.entries(notes).filter(([k,v]) => v && v.trim() && sets[k])), note:wnote.trim(), minutes: minutes ?? "", savedAt:Date.now()});
     if (tm && tm.date === curDate) timerSet(null);
     draftClear(); dirty = false; unlocked = false; toast($("#logToast"), minutes ? `Saved · ${minutes} min` : "Saved"); renderLog(); renderTimer();
   }
@@ -1305,7 +1331,11 @@ function renderFocus(group){
   $("#fDots").innerHTML = gs.map(g => `<i class="${focus.fin.includes(g.id) ? "f" : cur && g.id === cur.id ? "c" : ""} ${g.opt ? "o" : ""}"></i>`).join("");
   $("#fCount").textContent = focus.ended ? "Workout saved" : cur ? `${cur.opt ? "Optional · " : ""}${n} of ${gs.length}` : "All done";
   let html;
-  if (focus.ended) html = focus.ended;
+  if (focus.ended) { const {mins, sets, prs, skipped} = focus.ended; html = `<div class="fdone"><div class="big">💪</div><h2>Workout saved</h2><p class="sub">${esc(pDate(curDate).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}</p>
+    <div class="fstats"><div><b>${mins ?? "–"}</b><span class="sub">min</span></div><div><b>${sets}</b><span class="sub">sets</span></div><div><b>${prs}</b><span class="sub">PR${prs === 1 ? "" : "s"}</span></div></div>
+    <div class="fnote"><label class="label" for="fNote">Workout notes</label>${skipped.length ? `<p class="skipline">Skipped: ${esc(skipped.join(", "))}</p>` : ""}
+    <textarea id="fNote" rows="4" placeholder="How did it feel? Why was anything skipped? Anything to change next time?">${esc(wnote)}</textarea></div>
+    <div class="row2"><button type="button" class="primary" data-fclose="1">Save note and close</button></div></div>`; }
   else if (!cur || (cur.opt && !focus.opt)) {
     const optLeft = gs.filter(g => g.opt && !focus.fin.includes(g.id));
     html = `<div class="fdone"><div class="big">🎉</div><h2>${essLeft.length ? "" : "Main exercises done!"}</h2>
@@ -1313,7 +1343,7 @@ function renderFocus(group){
       <div class="row2">${optLeft.length ? `<button type="button" data-fopt="1">Keep going: optional</button>` : ""}<button type="button" class="primary" data-fend="1">End workout and save</button></div></div>`;
   } else {
     const box = group(cur.its);
-    html = `<p class="fsec">${cur.opt ? "If you have time" : cur.its.length > 1 ? "Superset · alternate one set of each" : "Next up"}</p><div class="fcard" id="fCard">${box}</div><p class="fhint">Swipe left to do it later · swipe right when you're done</p>`;
+    html = `<p class="fsec">${cur.opt ? "If you have time" : cur.its.length > 1 ? "Superset · alternate one set of each" : "Next up"}</p><div class="fwrap" id="fWrap"><div class="fbg" aria-hidden="true"><span class="fbl">✓ Done</span><span class="fbr">Do later ⟲</span></div><div class="fcard" id="fCard">${box}</div></div><p class="fhint">Swipe left to do it later · swipe right when you're done</p>`;
   }
   const atBottom = !cur || (cur.opt && !focus.opt) || focus.ended;
   $("#fFoot").hidden = !!atBottom;
@@ -1359,17 +1389,16 @@ function fDone(){
     fUndoOffer(!ticks ? `Skipped ${nm}: no sets checked.` : ticks < total ? `${nm} done with ${ticks} of ${total} sets checked.` : `${nm} done.`);
   });
 }
-function fSnap(){ const c = $("#fCard"); if (c) { c.style.transform = ""; c.style.opacity = ""; c.classList.remove("l","r"); } }
+function fSnap(){ const c = $("#fCard"), w = $("#fWrap"); if (c) { c.style.transform = ""; c.style.opacity = ""; } if (w) { w.classList.remove("l","r","go"); w.style.removeProperty("--sw"); } }
 async function focusEnd(){
   if (cd.k === "_rest") cdStop();
   const tm = timerGet(); if (tm && tm.date === curDate) $("#dur").value = timerMinutes(tm);
   let sets = 0, prs = 0; Object.keys(draft).forEach(k => (done[k] || []).forEach((x,i) => { if (x) { sets++; if (isPR(k, i)) prs++; } }));
+  const skipped = items().filter(it => !isOpt(it) && !(done[it[0]] || []).some(Boolean)).map(it => EX[it[0]].n);
   const mins = num($("#dur").value);
   const ok = await saveWorkout();
   if (!ok) { toast($("#fToast"), "Check off at least one set before ending.", true); return; }
-  focus.ended = `<div class="fdone"><div class="big">💪</div><h2>Workout saved</h2><p class="sub">${esc(pDate(curDate).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}))}</p>
-    <div class="fstats"><div><b>${mins ?? "–"}</b><span class="sub">min</span></div><div><b>${sets}</b><span class="sub">sets</span></div><div><b>${prs}</b><span class="sub">PR${prs === 1 ? "" : "s"}</span></div></div>
-    <div class="row2"><button type="button" class="primary" data-fclose="1">Close</button></div></div>`;
+  focus.ended = {mins, sets, prs, skipped};
   focus.fin = []; focus.back = []; focus.opt = false; focusSave();
   confetti(innerWidth * 0.5, innerHeight * 0.4, 90, Math.PI); feedback(true);
   renderExList(); renderTimer();
@@ -1392,37 +1421,48 @@ function restAfter(k){
 $("#fClose").addEventListener("click", focusClose);
 $("#fLater").addEventListener("click", fLater);
 $("#fDone").addEventListener("click", fDone);
-$("#fBody").addEventListener("input", exInputH);
+$("#fBody").addEventListener("input", e => { if (e.target.id === "fNote") { wnote = e.target.value; return; } exInputH(e); });
 $("#fBody").addEventListener("click", e => {
   const b = e.target.closest("button");
   if (b && b.dataset.fopt) { focus.opt = true; focusSave(); renderExList(); return; }
   if (b && b.dataset.fend) { focusEnd(); return; }
-  if (b && b.dataset.fclose) { focusClose(); window.scrollTo(0,0); return; }
+  if (b && b.dataset.fclose) {
+    const t = $("#fNote"), v = t ? t.value.trim() : null, sv = state.sessions[sid()];
+    if (v != null && sv && v !== (sv.note || "")) { wnote = v; putSession(sid(), {...sv, note:v}).catch(() => {}); }
+    focusClose(); window.scrollTo(0,0); return; }
   exClick(e);
 });
 // Swipe the card: left = do later, right = done with it.
+// Moves are tracked on the whole document: the form animation redraws under the finger many times a second,
+// which used to drop the gesture when the Form section was open.
 (() => {
-  let sx = 0, sy = 0, dx = 0, on = false, horiz = null, card = null;
+  const TH = 80;
+  let sx = 0, sy = 0, dx = 0, on = false, horiz = null, card = null, wrap = null, pid = null;
   const body = $("#fBody");
   body.addEventListener("pointerdown", e => {
+    if (e.button > 0) return;
     card = e.target.closest(".fcard"); if (!card || e.target.closest("input,textarea,select")) { card = null; return; }
-    sx = e.clientX; sy = e.clientY; dx = 0; on = true; horiz = null;
+    wrap = card.parentElement; sx = e.clientX; sy = e.clientY; dx = 0; on = true; horiz = null; pid = e.pointerId;
   });
-  body.addEventListener("pointermove", e => {
-    if (!on || !card) return;
+  document.addEventListener("pointermove", e => {
+    if (!on || !card || e.pointerId !== pid) return;
     const mx = e.clientX - sx, my = e.clientY - sy;
-    if (horiz == null && Math.hypot(mx, my) > 10) horiz = Math.abs(mx) > Math.abs(my) * 1.3;
+    if (horiz == null && Math.hypot(mx, my) > 8) { horiz = Math.abs(mx) > Math.abs(my) * 1.2; if (horiz) { try { card.setPointerCapture(pid); } catch(err){} } }
     if (!horiz) return;
-    dx = mx; card.classList.add("drag"); card.style.transform = `translateX(${dx}px) rotate(${dx/40}deg)`;
-    card.classList.toggle("l", dx < 0); card.classList.toggle("r", dx > 0); card.style.setProperty("--sw", Math.min(1, Math.abs(dx)/90));
-  });
-  const end = () => {
-    if (!on || !card) return; on = false; card.classList.remove("drag");
-    if (horiz && dx < -90) fLater(); else if (horiz && dx > 90) fDone(); else fSnap();
-    if (horiz) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; body.addEventListener("click", stop, {capture:true, once:true}); setTimeout(() => body.removeEventListener("click", stop, {capture:true}), 50); }
-    card = null;
+    dx = mx; const p = Math.min(1, Math.abs(dx) / TH);
+    card.classList.add("drag"); card.style.transform = `translateX(${dx}px) rotate(${dx/30}deg)`;
+    wrap.classList.toggle("l", dx < 0); wrap.classList.toggle("r", dx > 0); wrap.style.setProperty("--sw", p);
+    card.style.setProperty("--sw", p);
+    const go = Math.abs(dx) >= TH; if (go !== wrap.classList.contains("go")) wrap.classList.toggle("go", go);
+  }, {passive:true});
+  const end = e => {
+    if (!on || !card || (e && e.pointerId !== pid)) return; on = false; card.classList.remove("drag"); card.style.removeProperty("--sw");
+    if (horiz && dx <= -TH) fLater(); else if (horiz && dx >= TH) fDone(); else fSnap();
+    if (horiz) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener("click", stop, {capture:true, once:true}); setTimeout(() => document.removeEventListener("click", stop, {capture:true}), 60); }
+    card = null; wrap = null;
   };
-  body.addEventListener("pointerup", end); body.addEventListener("pointercancel", () => { on = false; fSnap(); card = null; });
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", e => { if (!on || e.pointerId !== pid) return; if (horiz && Math.abs(dx) >= TH) { end(e); return; } on = false; if (card) card.classList.remove("drag"); fSnap(); card = null; });
 })();
 
 /* ---------- countdown for timed exercises (walks, stretches, planks…) ---------- */
@@ -1477,6 +1517,7 @@ $("#cdCancel").addEventListener("click", cdStop);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && cd.k != null) { if (cd.pausedLeft == null) cdWake(true); renderCd(); } });
 setInterval(() => { if (timerGet()) renderTimer(); if (cd.k != null) renderCd(); }, 250);
 $("#dur").addEventListener("input", () => { markDirty(); });
+$("#wnote").addEventListener("input", () => { wnote = $("#wnote").value; markDirty(); });
 setInterval(renderTimer, 15000);
 let delArmed = false;
 $("#delBtn").addEventListener("click", async () => {
