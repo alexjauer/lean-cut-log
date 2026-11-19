@@ -695,6 +695,14 @@ const HOME_ONLY = ["brot","bfly","bcrunch","bpullapart","bcurl","bhammer","bchop
 const GYM_ONLY = ["squat","legpress","trapdl","hipthrust","legcurl","pullup","pulldown","cablerow","csrow","chestpress","mshpress","incpress","ohcable","pushdown","skull","ezcurl","preacher","cgbench","cablecr","kneeraise","facepull","calfse","run","intervals","incwalk","bike",
   "abcrunch","captain","pallofc","cablecurl","machcurl","ropehammer","tridip","cablelat","machlat","revdeck","pecdeck","machrow","hacksq","smithsq","legext","calfpress","backext"];
 const locOK = (a, loc) => loc === "gym" ? !HOME_ONLY.includes(a) : loc === "home" ? !GYM_ONLY.includes(a) : true;
+// Where an exercise can be done: bands/door anchor = home, machines/cables/barbells/bench = gym, dumbbells and bodyweight = both.
+const whereOf = k => HOME_ONLY.includes(k) ? "home" : GYM_ONLY.includes(k) ? "gym" : "both";
+const WHERE_TXT = {home:"Home only", gym:"Gym only", both:"Home or gym"};
+const HOME_MAX = 25; // heaviest dumbbells at home
+// Heaviest weight used on the most recent day this exercise was logged.
+function lastWeight(k){ const l = lastFor(k, curDate); return l ? Math.max(0, ...l.sets.map(r => num(r[0]) || 0)) : 0; }
+// A dumbbell exercise you've been doing with more than 25 lb is gym-only for now.
+const tooHeavyHome = k => EX[k].k === "lift" && whereOf(k) === "both" && lastWeight(k) > HOME_MAX;
 const altsFor = (base, loc) => (ALTS[base] || []).filter(a => locOK(a, loc));
 // Same main muscle, right place, and not already in today's workout (done or still to come).
 function swapChoices(it){
@@ -702,7 +710,7 @@ function swapChoices(it){
   if (!prim || NO_SWAP.includes(prim)) return null;
   const inToday = new Set(items().map(x => x[0]));
   const pool = [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]
-    .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && locOK(a, loc));
+    .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && locOK(a, loc) && !(loc === "home" && tooHeavyHome(a)));
   return [...(it[4] && !inToday.has(base) ? [base] : []), ...pool].slice(0, 8);
 }
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
@@ -805,7 +813,7 @@ const FORM = {
   dbskull:["Lie on the floor or a bench, dumbbells over your chest, palms facing each other. Bend only your elbows to lower the weights beside your head, then extend.","Keep your upper arms angled slightly back toward your head so the triceps stay loaded at the top.","Elbows point up, not out. Start light; this is hard on elbows if rushed."],
   revcrunch:["Lie on your back, hands by your sides, knees bent at 90° over your hips. Curl your pelvis up off the floor, bringing your knees toward your chest, then lower slowly.","The pelvis curl is what works the lower abs, so go slow on the way down. Add ankle weights to progress.","Your head and shoulders stay on the floor the whole time, so your neck does nothing. Don't swing your legs."],
   squat:["Bar on the upper back, not the neck. Feet shoulder-width, toes out 15–30°. Brace, sit down between the heels, drive up.","Go as deep as you can with a flat lower back, at least thighs parallel. Knees push out in line with the toes.","Whole foot planted. If the lower back rounds at the bottom, stop a little higher. Use the rack's safety pins."],
-  goblet:["Hold one dumbbell vertically against the chest, elbows down. Squat between the knees, elbows brushing the inner thighs at the bottom.","A 3-second lowering and 1-second pause at the bottom make 25 lb hard.","Chest stays tall; don't let the dumbbell pull you forward."],
+  goblet:["Hold one dumbbell vertically against the chest, elbows down. Squat between the knees, elbows brushing the inner thighs at the bottom.","A 3-second lowering and 1-second pause at the bottom make 25 lb hard. Past that: a long (linear) band under your feet with the ends held against your chest with the dumbbell adds resistance near the top. A loop band just above the knees doesn't add load, but pushing your knees out against it works the glutes and keeps the knees tracking.","Chest stays tall; don't let the dumbbell pull you forward."],
   dbrdl:["Stand tall, soft knees. Push the hips straight back, sliding the weights down the thighs until a strong hamstring stretch. Squeeze the glutes to stand.","The stretch is the point. Go only as low as the back stays flat.","It's a hip hinge, not a squat or a toe touch. Rounding the back to reach lower is the most common injury mistake."],
   trapdl:["Stand centered in the bar, feet hip-width. Hinge and bend the knees to grab the high handles. Chest up, \"bend the bar\" to tighten the back, push the floor away.","Heavy, clean reps in the 5–6 range build whole-body strength. Lower under control.","Take the slack out before pulling (no jerking). Back flat start to finish; lock out with the glutes, not by leaning back."],
   bss:["Back foot laces-down on a bench, front foot 2–3 feet ahead. Drop the back knee straight down, push up through the front heel.","Slight forward lean hits glutes more; upright hits quads more. Both are fine.","Find the stance with bodyweight first. Front knee tracks over the toes. Hold a rack for balance if needed."],
@@ -1093,7 +1101,7 @@ function buildDraft(){
         const src = lr[Math.min(i, lr.length-1)]; if (!src) return;
         hints[k][i] = src;
         // Pre-fill the weight from last time; reps stay blank with last time's reps as the hint.
-        if (!have && EX[k].k === "lift" && src[0] !== "" && src[0] != null) r[0] = src[0];
+        if (!have && EX[k].k === "lift" && src[0] !== "" && src[0] != null) r[0] = p.loc === "home" && whereOf(k) === "both" ? Math.min(num(src[0]) || 0, HOME_MAX) : src[0];
       });
     }
   });
@@ -1144,7 +1152,7 @@ function exInput(k, i, j, v, lock){
 function exCard(it){
   const [k,n,target] = it, e = EX[k], u = KUNIT[e.k], last = lastFor(k, curDate), up = upInfo(k, n, target), pair = pairOf(it);
   const base = it[4] || k, choices = swapChoices(it) || [], canSwap = swapChoices(it) !== null, prim = (EX[base].m || [])[0];
-  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
+  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
   const allDone = done[k].length > 0 && done[k].every(Boolean);
   const anyPR = draft[k].some((r,i) => isPR(k, i));
   const L = wkLocked();
