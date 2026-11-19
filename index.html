@@ -644,7 +644,7 @@ const EX = {
   wristcurl:{n:"Wrist curl",k:"lift"}, rwristcurl:{n:"Reverse wrist curl",k:"lift"}, shrug:{n:"Dumbbell shrug",k:"lift"},
   suitcase:{n:"Suitcase hold (per side)",k:"time"}, ohext1:{n:"One-arm overhead triceps extension",k:"lift"}, kickback:{n:"Dumbbell triceps kickback",k:"lift"},
   bridge:{n:"Glute bridge (dumbbell optional)",k:"lift"}, hipabd:{n:"Hip abduction machine",k:"lift"}, cablekick:{n:"Cable glute kickback (per side)",k:"lift"},
-  bandabd:{n:"Banded seated hip abduction",k:"bw"}, bandwalk:{n:"Banded lateral walk",k:"bw"}, sbridge:{n:"Single-leg glute bridge (per side)",k:"bw"},
+  bandabd:{n:"Banded seated hip abduction",k:"bw"}, bandwalk:{n:"Banded lateral walk",k:"bw"}, clamshell:{n:"Banded clamshell (per side)",k:"bw"}, sbridge:{n:"Single-leg glute bridge (per side)",k:"bw"},
   brot:{n:"Band torso rotation (per side)",k:"lift"}, bfly:{n:"Band chest fly",k:"lift"}, bcrunch:{n:"Kneeling band crunch",k:"lift"},
   bpullapart:{n:"Band reverse fly (pull-apart)",k:"lift"}, bcurl:{n:"Band biceps curl",k:"lift"}, bhammer:{n:"Band hammer curl",k:"lift"},
   bchop:{n:"Band woodchopper (per side)",k:"lift"}, bfront:{n:"Band front raise",k:"lift"}, blat:{n:"Band lateral raise",k:"lift"},
@@ -653,7 +653,7 @@ const EX = {
 // Muscles worked, main one first. Swaps only offer exercises whose main muscle matches.
 const MUSCLE_TAGS = {
   quads:["goblet","squat","bss","lunge","legpress","hacksq","smithsq","legext","revlunge"],
-  hamstrings:["dbrdl","trapdl","legcurl","backext"], glutes:["hipthrust","bridge","sbridge","hipabd","cablekick","bandabd","bandwalk"],
+  hamstrings:["dbrdl","trapdl","legcurl","backext"], glutes:["hipthrust","bridge","sbridge","hipabd","cablekick","bandabd","bandwalk","clamshell"],
   chest:["pushup","dbbench","chestpress","incpress","dbfloor","pecdeck","dbfly","bfly"],
   back:["pullup","pulldown","dpulldown","row1","csrow","cablerow","drow","machrow","bentrow2"],
   shoulders:["shpress","mshpress","frontraise","bfront","bohp"], sidedelts:["latraise","cablelat","machlat","blat"], reardelts:["revfly","facepull","dface","revdeck","bpullapart"],
@@ -692,7 +692,7 @@ const ALTS = {
   calfst:["calfse","calfpress"], calfse:["calfst","calfpress"], run:["bike"], incwalk:["bike","walk"], intervals:["bike"]
 };
 // Bands and the door anchor stay home; machines, cables, barbells and cardio machines stay at the gym.
-const HOME_ONLY = ["bandabd","bandwalk","brot","bfly","bcrunch","bpullapart","bcurl","bhammer","bchop","bfront","blat","bohp","bkick","circuit","dface","dpushdown","dpulldown","drow","dohext","pallof","bandankle","bandevert"];
+const HOME_ONLY = ["clamshell","bandabd","bandwalk","brot","bfly","bcrunch","bpullapart","bcurl","bhammer","bchop","bfront","blat","bohp","bkick","circuit","dface","dpushdown","dpulldown","drow","dohext","pallof","bandankle","bandevert"];
 const GYM_ONLY = ["hipabd","cablekick","squat","legpress","trapdl","hipthrust","legcurl","pullup","pulldown","cablerow","csrow","chestpress","mshpress","incpress","ohcable","pushdown","skull","ezcurl","preacher","cgbench","cablecr","kneeraise","facepull","calfse","run","intervals","incwalk","bike",
   "abcrunch","captain","pallofc","cablecurl","machcurl","ropehammer","tridip","cablelat","machlat","revdeck","pecdeck","machrow","hacksq","smithsq","legext","calfpress","backext"];
 const locOK = (a, loc) => loc === "gym" ? !HOME_ONLY.includes(a) : loc === "home" ? !GYM_ONLY.includes(a) : true;
@@ -772,6 +772,7 @@ const FORM = {
   legext:["Pad on your lower shins, knees lined up with the machine's pivot. Straighten your legs, squeeze your quads a second, lower slowly.","Isolates the quads; good as a finisher or when squat racks are full.","Moderate weight; no kicking the weight up."],
   calfpress:["On the leg press, balls of your feet on the bottom edge of the platform, legs straight but not locked. Press through your toes, then let your heels come back for a stretch.","Pause 2 seconds in the stretch at the bottom.","Keep the safety handles engaged. Weight through the big toe, not rolling outward."],
   backext:["Hips on the pad, ankles hooked. Lower your upper body forward, then rise until your body is in a straight line.","Squeeze your glutes to come up. Hold a plate at your chest to make it harder.","Don't arch past straight at the top."],
+  clamshell:["Lie on your side, loop band just above your knees, hips and knees bent about 45°, feet together. Keeping your feet touching, lift your top knee as high as you can without your hips rolling back, pause, lower slowly. Switch sides.","Pause 1–2 seconds at the top. Burn in the side of the glute means it's working.","Rest your head on your bottom arm or a pillow so your neck stays relaxed. Keep your top hip stacked over the bottom one; don't roll backward to get more height."],
   hipabd:["Sit with your back against the pad, pads on the outside of your knees. Push your knees apart as far as you can, pause, return slowly.","Lean your torso slightly forward from the hips to hit the upper glutes more. Shapes the upper and side of the butt.","Controlled reps; don't let the stack slam."],
   cablekick:["Ankle strap on a low cable. Face the machine, hold on, slight forward lean. Kick the strapped leg straight back, squeeze your glute at the top, return slowly. Switch sides.","Squeeze for a second at the top; the movement comes from the hip, not the lower back.","Don't arch your lower back to get the leg higher. Stand on your right foot first if the left heel is sore."],
   bandabd:["Sit on the edge of a chair or bench, loop band just above your knees, feet hip-width. Push your knees apart against the band, pause, return slowly.","Lean forward a little to hit the upper glutes. High reps until it burns.","Keep your feet planted; the movement is at the hips."],
@@ -877,7 +878,7 @@ function formHtml(k){
 
 /* ---------- Target muscles ---------- */
 const MUSCLE = {
-  hipabd:"Glutes (upper/side) · Hip stability", cablekick:"Glutes", bandabd:"Glutes (upper/side)", bandwalk:"Glutes (upper/side) · Hip stability",
+  clamshell:"Glutes (upper/side) · Hip stability", hipabd:"Glutes (upper/side) · Hip stability", cablekick:"Glutes", bandabd:"Glutes (upper/side)", bandwalk:"Glutes (upper/side) · Hip stability",
   dbfly:"Chest", bentrow2:"Upper back · Lats · Biceps", xhammer:"Brachialis · Forearms · Biceps", frontraise:"Front delts · Upper chest", revlunge:"Quads · Glutes",
   reversecurl:"Forearms (brachioradialis) · Biceps", conccurl:"Biceps", rconccurl:"Forearms (brachioradialis) · Biceps", waiter:"Biceps",
   wristcurl:"Forearm flexors", rwristcurl:"Forearm extensors", shrug:"Upper traps", suitcase:"Obliques · Deep core · Grip",
