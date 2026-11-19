@@ -157,6 +157,7 @@ body.focusing.withbar .focus{padding-bottom:calc(64px + env(safe-area-inset-bott
 #dur[readonly],.sets input[readonly]{background:transparent;border-color:transparent;color:var(--fg, inherit);opacity:.9}
 .chk:disabled{opacity:1;cursor:default}
 .cdb:disabled{opacity:.35}
+.ex-foot button:disabled{opacity:.45;cursor:default}
 .exname{display:flex;flex-direction:column;gap:1px;min-width:0}
 .mus{font-size:12px;color:var(--muted)}
 .timechip{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--accent);background:var(--sunk);border-radius:999px;padding:3px 10px}
@@ -638,7 +639,32 @@ const EX = {
   hacksq:{n:"Hack squat machine",k:"lift"}, smithsq:{n:"Smith machine squat",k:"lift"}, legext:{n:"Leg extension",k:"lift"},
   calfpress:{n:"Calf press on the leg press",k:"lift"}, backext:{n:"45° back extension",k:"bw"}
 };
-// Swap options when equipment is taken: same movement pattern, same main muscles.
+// Muscles worked, main one first. Swaps only offer exercises whose main muscle matches.
+const MUSCLE_TAGS = {
+  quads:["goblet","squat","bss","lunge","legpress","hacksq","smithsq","legext"],
+  hamstrings:["dbrdl","trapdl","legcurl","backext"], glutes:["hipthrust"],
+  chest:["pushup","dbbench","chestpress","incpress","dbfloor","pecdeck"],
+  back:["pullup","pulldown","dpulldown","row1","csrow","cablerow","drow","machrow"],
+  shoulders:["shpress","mshpress"], sidedelts:["latraise","cablelat","machlat"], reardelts:["revfly","facepull","dface","revdeck"],
+  biceps:["dbcurl","inccurl","hammer","ezcurl","preacher","cablecurl","machcurl","ropehammer"],
+  triceps:["ohdb","ohcable","skull","dbskull","pushdown","dpushdown","dohext","tridip","cgbench","floorpress"],
+  calves:["calfst","calfse","calfpress"],
+  core:["deadbug","cablecr","kneeraise","revcrunch","plank","sideplank","birddog","pallof","pallofc","abwheel","abcrunch","captain"],
+  cardio:["incwalk","run","intervals","bike","walk","circuit"],
+  rehab:["heelwarm","calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck","mobility"], daily:["steps"]
+};
+const MUSCLE_ALSO = { // secondary muscles, for filtering and reference
+  goblet:["glutes","core"], squat:["glutes"], bss:["glutes"], lunge:["glutes"], legpress:["glutes"], hacksq:["glutes"], smithsq:["glutes"],
+  dbrdl:["glutes"], trapdl:["glutes","quads","back"], backext:["glutes"], hipthrust:["hamstrings"],
+  pushup:["triceps","shoulders","core"], dbbench:["triceps","shoulders"], chestpress:["triceps","shoulders"], incpress:["shoulders","triceps"], dbfloor:["triceps"],
+  pullup:["biceps"], pulldown:["biceps"], dpulldown:["biceps"], row1:["biceps","reardelts"], csrow:["biceps","reardelts"], cablerow:["biceps"], drow:["biceps"], machrow:["biceps"],
+  shpress:["triceps","sidedelts"], mshpress:["triceps"], facepull:["back"], dface:["back"], revfly:["back"], revdeck:["back"],
+  hammer:["forearms"], ropehammer:["forearms"], cgbench:["chest"], floorpress:["chest"], tridip:["chest"]
+};
+Object.entries(MUSCLE_TAGS).forEach(([m, ks]) => ks.forEach(k => { if (EX[k]) EX[k].m = [m, ...(MUSCLE_ALSO[k] || [])]; }));
+const MUSCLE_NAME = {quads:"quads", hamstrings:"hamstrings", glutes:"glutes", chest:"chest", back:"back", shoulders:"shoulders", sidedelts:"side-delt", reardelts:"rear-delt", biceps:"biceps", triceps:"triceps", calves:"calf", core:"core", cardio:"cardio"};
+const NO_SWAP = ["rehab","daily"];
+// Swap options when equipment is taken, in order of preference (filtered to the same main muscle).
 const ALTS = {
   squat:["hacksq","smithsq","legpress","goblet","bss"], legpress:["hacksq","squat","goblet","bss"], goblet:["legpress","hacksq","bss","squat"], bss:["lunge","legpress","hacksq","goblet"], lunge:["bss","goblet","legpress"],
   trapdl:["dbrdl","hipthrust","backext","legpress"], dbrdl:["hipthrust","backext","legcurl","trapdl"], hipthrust:["dbrdl","backext","legcurl"], legcurl:["dbrdl","hipthrust"],
@@ -652,10 +678,20 @@ const ALTS = {
   calfst:["calfse","calfpress"], calfse:["calfst","calfpress"], run:["bike"], incwalk:["bike","walk"], intervals:["bike"]
 };
 // Bands and the door anchor stay home; machines, cables, barbells and cardio machines stay at the gym.
-const HOME_ONLY = ["dface","dpushdown","dpulldown","drow","dohext","pallof","bandankle","bandevert"];
+const HOME_ONLY = ["circuit","dface","dpushdown","dpulldown","drow","dohext","pallof","bandankle","bandevert"];
 const GYM_ONLY = ["squat","legpress","trapdl","hipthrust","legcurl","pullup","pulldown","cablerow","csrow","chestpress","mshpress","incpress","ohcable","pushdown","skull","ezcurl","preacher","cgbench","cablecr","kneeraise","facepull","calfse","run","intervals","incwalk","bike",
   "abcrunch","captain","pallofc","cablecurl","machcurl","ropehammer","tridip","cablelat","machlat","revdeck","pecdeck","machrow","hacksq","smithsq","legext","calfpress","backext"];
-const altsFor = (base, loc) => (ALTS[base] || []).filter(a => loc === "gym" ? !HOME_ONLY.includes(a) : loc === "home" ? !GYM_ONLY.includes(a) : true);
+const locOK = (a, loc) => loc === "gym" ? !HOME_ONLY.includes(a) : loc === "home" ? !GYM_ONLY.includes(a) : true;
+const altsFor = (base, loc) => (ALTS[base] || []).filter(a => locOK(a, loc));
+// Same main muscle, right place, and not already in today's workout (done or still to come).
+function swapChoices(it){
+  const k = it[0], base = baseOf(it), prim = (EX[base].m || [])[0], loc = plan().loc;
+  if (!prim || NO_SWAP.includes(prim)) return null;
+  const inToday = new Set(items().map(x => x[0]));
+  const pool = [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]
+    .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && locOK(a, loc));
+  return [...(it[4] && !inToday.has(base) ? [base] : []), ...pool].slice(0, 6);
+}
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
   mon:{t:"Mon", loc:"home", d:"Full Body A · home dumbbells", x:[["goblet",3,"12–15","A"],["pushup",3,"near failure","A"],["dbrdl",3,"12–15","B"],["row1",3,"12–15/arm","B"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["pallof",3,"10/side","o"],["deadbug",3,"8/side","o"],["circuit",1,"max rounds","o"]],
@@ -673,6 +709,8 @@ const DAYS = {
 };
 const KUNIT = {steps:["steps"],lift:["lb","reps"],bw:["reps"],time:["sec"],min:["min"],rounds:["rounds"]};
 const START_W = 180, GOAL_W = 165;
+const WRANGES = [["14","2 wk"],["30","1 mo"],["90","3 mo"],["all","All"]];
+const wRange = () => { let v = window._wr; if (!v) { try { v = localStorage.getItem("leancut-wrange"); } catch(e){} } return WRANGES.some(r => r[0] === v) ? v : "30"; };
 
 /* ---------- helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -1058,8 +1096,8 @@ function exInput(k, i, j, v, lock){
 }
 function exCard(it){
   const [k,n,target] = it, e = EX[k], u = KUNIT[e.k], last = lastFor(k, curDate), up = upInfo(k, n, target), pair = pairOf(it);
-  const base = it[4] || k, choices = [...(it[4] ? [base] : []), ...altsFor(base, plan().loc)].filter(a => a !== k && EX[a]);
-  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Do this instead</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
+  const base = it[4] || k, choices = swapChoices(it) || [], canSwap = swapChoices(it) !== null, prim = (EX[base].m || [])[0];
+  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
   const allDone = done[k].length > 0 && done[k].every(Boolean);
   const anyPR = draft[k].some((r,i) => isPR(k, i));
   const L = wkLocked();
@@ -1077,7 +1115,7 @@ function exCard(it){
       <div class="sets ${u.length===1?"one":""} ${CD_KINDS.includes(e.k)?"cd":""}">${rows}</div>
       ${L ? (notes[k] ? `<p class="exnote-ro">📝 ${esc(notes[k])}</p>` : "") : (notes[k] || noteOpen.has(k)) ? `<textarea class="exnote" data-note="${k}" rows="2" placeholder="Note: how it felt, why you stopped, what to change…" aria-label="Note for ${esc(e.n)}">${esc(notes[k] || "")}</textarea>` : ""}
       ${L ? "" : swapHtml}
-      ${L ? "" : `<div class="ex-foot">${choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : ""}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button>${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}<button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
+      ${L ? "" : `<div class="ex-foot">${!canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button>${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}<button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
     </div>`;
 }
 function renderExList(){
@@ -1738,7 +1776,12 @@ function renderWeight(){
       </div>
       ${changes}
       <div class="legend"><span><i style="background:var(--muted)"></i>Daily weigh-in</span><span><i style="background:var(--accent)"></i>7-day average</span><span><i style="background:var(--plate)"></i>Goal</span></div>
-      ${lineChart([{pts:w.map(p=>({x:p.date,y:p.lb})), color:"var(--muted)", width:1.2, dots:false},{pts:avg, color:"var(--accent)", width:2.5, dots:true}], {goal:GOAL_W, extraY:[GOAL_W], label:"Body weight over time", minPad:1})}
+      <div class="locpick wrange" role="group" aria-label="Chart range">${WRANGES.map(([v,l]) => `<button type="button" data-wr="${v}" aria-pressed="${wRange()===v}">${l}</button>`).join("")}</div>
+      ${(() => { const from = wRange() === "all" ? "" : addDays(w[w.length-1].date, -(+wRange()));
+        const dw = w.filter(p => p.date >= from), da = avg.filter(p => p.x >= from);
+        const inView = da.concat(dw.map(p => ({y:p.lb}))).some(p => Math.abs(p.y - GOAL_W) < 3);
+        return lineChart([{pts:dw.map(p=>({x:p.date,y:p.lb})), color:"var(--muted)", width:1.2, dots:dw.length < 40},{pts:da, color:"var(--accent)", width:2.5, dots:true}], {goal: inView ? GOAL_W : null, extraY: inView ? [GOAL_W] : [], label:"Body weight over time", minPad:0.4}) +
+          (inView ? "" : `<p class="sub" style="margin:4px 0 0">Zoomed in to show small changes. Goal (${GOAL_W} lb) is below this view.</p>`); })()}
       ${wkRows ? `<h3>Weekly averages</h3><div class="tablebox"><table><thead><tr><th>Week of</th><th class="r">Avg lb</th><th class="r">Change</th><th class="r">Weigh-ins</th></tr></thead><tbody>${wkRows}</tbody></table></div>` : ""}
       <h3>Weigh-ins</h3>
       <div class="tablebox"><table><thead><tr><th>Date</th><th class="r">lb</th><th class="r">Change</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1764,6 +1807,7 @@ $("#wSave").addEventListener("click", async () => {
   catch(e){ toast($("#wToast"), "Couldn't save. Check your connection and try again.", true); }
 });
 $("#wBody").addEventListener("click", async e => {
+  const wr = e.target.closest("[data-wr]"); if (wr) { try { localStorage.setItem("leancut-wrange", wr.dataset.wr); } catch(err){} window._wr = wr.dataset.wr; renderAll(); return; }
   const b = e.target.closest("[data-wdel]"); if (!b) return;
   if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirm"; return; }
   try { await dropWeight(b.dataset.wdel); } catch(err){ toast($("#wToast"), "Couldn't remove. Try again.", true); }
