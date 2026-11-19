@@ -248,6 +248,15 @@ textarea{resize:vertical;line-height:1.4}
 .pairnote{margin:0 0 6px}
 .donechip{color:var(--muted)}
 .donechip.alldone{color:var(--good)}
+.libgrp h3{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.librow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.librow .lt{flex:1;min-width:0}
+.librow .lt b{display:block;font-weight:500}
+.librow .lt span{font-size:12px;color:var(--muted)}
+.librow.off .lt b{text-decoration:line-through;opacity:.55}
+.librow button{flex:none;padding:6px 12px;font-size:13px;min-width:84px}
+.librow button[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:var(--on-good)}
+.libnote{font-size:12px;color:var(--muted)}
 .locpick{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap}
 .locpick .label{margin-right:4px}
 .locpick button{padding:6px 14px}
@@ -423,6 +432,13 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <div class="field"><label class="label" for="exPick">Exercise</label><select id="exPick"></select></div>
     </div>
     <div class="panel" id="progBody"></div>
+    <div class="panel">
+      <details id="libBox"><summary><h2 style="display:inline">Exercise collection</h2> <span class="sub" id="libCount"></span></summary>
+        <p class="sub" style="margin:8px 0">Turn off anything you don't want suggested. Removed exercises never show up in swaps, and if one is in a workout, the closest same-muscle exercise takes its place the next time you open that day. Your history is kept.</p>
+        <div class="field"><label class="label" for="libQ">Search</label><input type="search" id="libQ" placeholder="curl, glutes, band…"></div>
+        <div id="libList"></div>
+      </details>
+    </div>
   </section>
 
   <section id="view-body" class="wrap" hidden>
@@ -711,8 +727,8 @@ function swapChoices(it){
   if (!prim || NO_SWAP.includes(prim)) return null;
   const inToday = new Set(items().map(x => x[0]));
   const pool = [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]
-    .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && locOK(a, loc) && !(loc === "home" && tooHeavyHome(a)));
-  return [...(it[4] && !inToday.has(base) ? [base] : []), ...pool].slice(0, 8);
+    .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && !hidden.has(a) && locOK(a, loc) && !(loc === "home" && tooHeavyHome(a)));
+  return [...(it[4] && !inToday.has(base) && !hidden.has(base) ? [base] : []), ...pool].slice(0, 8);
 }
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
@@ -1002,7 +1018,22 @@ const sessionLoc = s => s.loc || (DAYS[s.day] ? DAYS[s.day].loc : "gym");
 function plan(day = curDay, loc = curLoc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
 const isOpt = it => /o/.test(it[3] || "");
 let swaps = {}, swapOpen = null, later = [];
-const itemsOf = (p, sw) => p.x.map(it => sw && sw[it[0]] && EX[sw[it[0]]] ? [sw[it[0]], it[1], it[2], it[3] || "", it[0]] : it);
+// Exercises you've removed from your collection (kept on this device and in backups).
+const HK = "leancut-hidden";
+let hidden = (() => { try { return new Set(JSON.parse(localStorage.getItem(HK) || "[]")); } catch(e){ return new Set(); } })();
+let hidApplied = new Set(hidden); // takes effect when a day is (re)loaded, so a workout in progress never changes under you
+function hiddenSave(){ try { localStorage.setItem(HK, JSON.stringify([...hidden])); } catch(e){} }
+// A removed exercise in a plan is replaced by the best same-muscle exercise you still have; with none left, it's dropped.
+function autoSub(base, p){
+  const prim = (EX[base].m || [])[0]; if (!prim || NO_SWAP.includes(prim)) return null;
+  const inPlan = new Set(p.x.map(x => x[0]));
+  return [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])].find(a => a !== base && EX[a].m && EX[a].m[0] === prim && !hidApplied.has(a) && !inPlan.has(a) && locOK(a, p.loc)) || null;
+}
+const itemsOf = (p, sw) => p.x.map(it => {
+  if (sw && sw[it[0]] && EX[sw[it[0]]]) return [sw[it[0]], it[1], it[2], it[3] || "", it[0]];
+  if (hidApplied.has(it[0])) { const a = autoSub(it[0], p); return a ? [a, it[1], it[2], it[3] || "", it[0]] : null; }
+  return it;
+}).filter(Boolean);
 const baseOf = it => it[4] || it[0];
 // "Do later": move an essential (and its superset partner) to the end of the essentials.
 function items(){
@@ -1086,6 +1117,7 @@ function isPR(k, i){
 }
 function sessionBestDone(k){ let b = null; (draft[k] || []).forEach((r,i) => { if (!done[k][i]) return; const s = setScore(k, r, curDate); if (better(s, b)) b = s; }); return b; }
 function buildDraft(){
+  hidApplied = new Set(hidden);
   const p = plan(), saved = state.sessions[sid()];
   const savedHere = saved && sessionLoc(saved) === p.loc ? saved : null;
   const local = draftLoad();
@@ -1170,7 +1202,7 @@ function exCard(it){
     ? `<div class="upb"><b>↑ Ready to progress.</b> You're at the 25 lb dumbbell max. Next step: add a light resistance band (stand on it and hold it with the dumbbells), then medium, then heavy. You can also add a rep, slow the lowering to 4 seconds, or add a set.</div>`
     : `<div class="upb"><b>↑ Go up.</b> You hit the top of the rep range on every set last time. Try ${up.next} lb. <button type="button" class="ghost" data-up="${k}" data-w="${up.next}">Use ${up.next} lb</button></div>`;
   return `<div class="ex ${allDone?"exdone":""}" data-ex="${k}">
-      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ Swapped in for ${esc(EX[it[4]].n)}</span>` : ""}${isLater(it) ? `<span class="swapnote">↓ Moved to later</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
+      <details class="fn" id="fn-${k}"><summary><div class="exname"><h3>${pair?`<span class="pair">${pair}${it._n||""}</span>`:""}${esc(e.n)}${up?` <span class="upchip" aria-label="go up in weight">↑</span>`:""}${anyPR?` <span class="prtag">★ PR</span>`:""}${allDone && !anyPR?` <span class="donetag">Done</span>`:""}</h3><span class="mus">${esc(MUSCLE[k] || "")}</span>${it[4] ? `<span class="swapnote">⇄ ${hidApplied.has(it[4]) && !swaps[it[4]] ? "Replaces" : "Swapped in for"} ${esc(EX[it[4]].n)}${hidApplied.has(it[4]) && !swaps[it[4]] ? " (removed from your collection)" : ""}</span>` : ""}${isLater(it) ? `<span class="swapnote">↓ Moved to later</span>` : ""}</div><span class="i">${n > 1 ? n+" × " : ""}${esc(target)} · Form</span></summary>${formHtml(k)}</details>
       ${upHtml}
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
       ${last && last.note ? `<p class="lastnote">📝 Last time: <b>${esc(last.note)}</b></p>` : ""}
@@ -2354,7 +2386,7 @@ if (STANDALONE) {
   $("#backupPanel").hidden = false;
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
 }
-function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food}; }
+function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden]}; }
 $("#bkExport").addEventListener("click", async () => {
   const name = `lean-cut-backup-${today()}.json`;
   const blob = new Blob([JSON.stringify(backupData(), null, 1)], {type:"application/json"});
@@ -2373,6 +2405,7 @@ $("#bkImport").addEventListener("change", async e => {
     if (!d || d.app !== "lean-cut-log") throw new Error("not a backup");
     let n = 0;
     ["sessions","weights","measures","water","food"].forEach(k => { if (d[k] && typeof d[k] === "object") { Object.assign(state[k], d[k]); n += Object.keys(d[k]).length; } });
+    if (Array.isArray(d.hidden)) { d.hidden.forEach(k => hidden.add(k)); hiddenSave(); }
     lsSave(); dirty = false; renderAll();
     toast($("#bkToast"), `Imported ${n} entries`);
   } catch(err){ toast($("#bkToast"), "That file isn't a Lean Cut Log backup.", true); }
@@ -2697,8 +2730,28 @@ function animTick(ts){
 }
 document.addEventListener("toggle", e => { if (e.target.open && !animRaf && !reduceMotion()) animRaf = requestAnimationFrame(animTick); }, true);
 
+const LIB_ORDER = ["biceps","triceps","core","glutes","quads","hamstrings","chest","back","shoulders","sidedelts","reardelts","forearms","traps","calves","cardio","rehab","daily"];
+const LIB_NAME = {biceps:"Biceps", triceps:"Triceps", core:"Core", glutes:"Glutes", quads:"Quads", hamstrings:"Hamstrings", chest:"Chest", back:"Back", shoulders:"Shoulders", sidedelts:"Side delts", reardelts:"Rear delts", forearms:"Forearms", traps:"Traps", calves:"Calves", cardio:"Cardio", rehab:"Heel rehab + mobility", daily:"Daily"};
+function inAnyPlan(k){ return Object.values(DAYS).some(D => [D, D.alt].filter(Boolean).some(p => p.x.some(it => it[0] === k))); }
+function renderLib(){
+  const q = ($("#libQ").value || "").trim().toLowerCase(), keys = Object.keys(EX);
+  $("#libCount").textContent = `${keys.length - [...hidden].filter(k => EX[k]).length} of ${keys.length} on`;
+  $("#libList").innerHTML = LIB_ORDER.map(g => {
+    const ks = keys.filter(k => EX[k].m && EX[k].m[0] === g && (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + g + " " + WHERE_TXT[whereOf(k)]).toLowerCase().includes(q)))
+      .sort((a,b) => EX[a].n.localeCompare(EX[b].n));
+    if (!ks.length) return "";
+    return `<div class="libgrp"><h3>${LIB_NAME[g]}</h3>${ks.map(k => { const off = hidden.has(k);
+      return `<div class="librow ${off ? "off" : ""}"><div class="lt"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${WHERE_TXT[whereOf(k)]}${inAnyPlan(k) ? " · in your plan" : ""}</span></div><button type="button" data-lib="${k}" aria-pressed="${!off}" aria-label="${esc(EX[k].n)}: ${off ? "removed, tap to add back" : "on, tap to remove"}">${off ? "Add back" : "✓ On"}</button></div>`; }).join("")}</div>`;
+  }).join("") || `<p class="empty">No exercises match.</p>`;
+}
+$("#libQ").addEventListener("input", renderLib);
+$("#libList").addEventListener("click", e => {
+  const b = e.target.closest("[data-lib]"); if (!b) return;
+  const k = b.dataset.lib; hidden.has(k) ? hidden.delete(k) : hidden.add(k); hiddenSave(); buzz(false); renderLib();
+  if (!dirty && !focus.open) renderLog();
+});
 function renderAll(){
-  try { renderLog(); renderProgress(); renderWeight(); renderMeasures(); renderWater(); renderFood(); renderReport(); } catch(e){ console.error(e); }
+  try { renderLib(); renderLog(); renderProgress(); renderWeight(); renderMeasures(); renderWater(); renderFood(); renderReport(); } catch(e){ console.error(e); }
 }
 renderAll();
 route();
