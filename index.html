@@ -637,20 +637,31 @@ const EX = {
   tridip:{n:"Seated dip machine",k:"lift"}, cablelat:{n:"Cable lateral raise",k:"lift"}, machlat:{n:"Machine lateral raise",k:"lift"},
   revdeck:{n:"Reverse pec deck",k:"lift"}, pecdeck:{n:"Pec deck fly",k:"lift"}, machrow:{n:"Machine row (chest-supported)",k:"lift"},
   hacksq:{n:"Hack squat machine",k:"lift"}, smithsq:{n:"Smith machine squat",k:"lift"}, legext:{n:"Leg extension",k:"lift"},
-  calfpress:{n:"Calf press on the leg press",k:"lift"}, backext:{n:"45° back extension",k:"bw"}
+  calfpress:{n:"Calf press on the leg press",k:"lift"}, backext:{n:"45° back extension",k:"bw"},
+  dbfly:{n:"Dumbbell chest fly",k:"lift"}, bentrow2:{n:"Bent-over dumbbell row (two-arm)",k:"lift"}, xhammer:{n:"Cross-body hammer curl",k:"lift"},
+  frontraise:{n:"Dumbbell front raise",k:"lift"}, revlunge:{n:"Dumbbell reverse lunge",k:"lift"}, reversecurl:{n:"Reverse curl (palms down)",k:"lift"},
+  conccurl:{n:"Concentration curl",k:"lift"}, rconccurl:{n:"Reverse-grip concentration curl",k:"lift"}, waiter:{n:"Waiter curl",k:"lift"},
+  wristcurl:{n:"Wrist curl",k:"lift"}, rwristcurl:{n:"Reverse wrist curl",k:"lift"}, shrug:{n:"Dumbbell shrug",k:"lift"},
+  suitcase:{n:"Suitcase hold (per side)",k:"time"}, ohext1:{n:"One-arm overhead triceps extension",k:"lift"}, kickback:{n:"Dumbbell triceps kickback",k:"lift"},
+  bridge:{n:"Glute bridge",k:"bw"}, sbridge:{n:"Single-leg glute bridge (per side)",k:"bw"},
+  brot:{n:"Band torso rotation (per side)",k:"lift"}, bfly:{n:"Band chest fly",k:"lift"}, bcrunch:{n:"Kneeling band crunch",k:"lift"},
+  bpullapart:{n:"Band reverse fly (pull-apart)",k:"lift"}, bcurl:{n:"Band biceps curl",k:"lift"}, bhammer:{n:"Band hammer curl",k:"lift"},
+  bchop:{n:"Band woodchopper (per side)",k:"lift"}, bfront:{n:"Band front raise",k:"lift"}, blat:{n:"Band lateral raise",k:"lift"},
+  bohp:{n:"Band overhead press",k:"lift"}, bkick:{n:"Band triceps kickback",k:"lift"}
 };
 // Muscles worked, main one first. Swaps only offer exercises whose main muscle matches.
 const MUSCLE_TAGS = {
-  quads:["goblet","squat","bss","lunge","legpress","hacksq","smithsq","legext"],
-  hamstrings:["dbrdl","trapdl","legcurl","backext"], glutes:["hipthrust"],
-  chest:["pushup","dbbench","chestpress","incpress","dbfloor","pecdeck"],
-  back:["pullup","pulldown","dpulldown","row1","csrow","cablerow","drow","machrow"],
-  shoulders:["shpress","mshpress"], sidedelts:["latraise","cablelat","machlat"], reardelts:["revfly","facepull","dface","revdeck"],
-  biceps:["dbcurl","inccurl","hammer","ezcurl","preacher","cablecurl","machcurl","ropehammer"],
-  triceps:["ohdb","ohcable","skull","dbskull","pushdown","dpushdown","dohext","tridip","cgbench","floorpress"],
+  quads:["goblet","squat","bss","lunge","legpress","hacksq","smithsq","legext","revlunge"],
+  hamstrings:["dbrdl","trapdl","legcurl","backext"], glutes:["hipthrust","bridge","sbridge"],
+  chest:["pushup","dbbench","chestpress","incpress","dbfloor","pecdeck","dbfly","bfly"],
+  back:["pullup","pulldown","dpulldown","row1","csrow","cablerow","drow","machrow","bentrow2"],
+  shoulders:["shpress","mshpress","frontraise","bfront","bohp"], sidedelts:["latraise","cablelat","machlat","blat"], reardelts:["revfly","facepull","dface","revdeck","bpullapart"],
+  biceps:["dbcurl","inccurl","hammer","ezcurl","preacher","cablecurl","machcurl","ropehammer","xhammer","conccurl","waiter","bcurl","bhammer"],
+  triceps:["ohdb","ohcable","skull","dbskull","pushdown","dpushdown","dohext","tridip","cgbench","floorpress","ohext1","kickback","bkick"],
   calves:["calfst","calfse","calfpress"],
-  core:["deadbug","cablecr","kneeraise","revcrunch","plank","sideplank","birddog","pallof","pallofc","abwheel","abcrunch","captain"],
+  core:["deadbug","cablecr","kneeraise","revcrunch","plank","sideplank","birddog","pallof","pallofc","abwheel","abcrunch","captain","suitcase","brot","bcrunch","bchop"],
   cardio:["incwalk","run","intervals","bike","walk","circuit"],
+  forearms:["reversecurl","rconccurl","wristcurl","rwristcurl"], traps:["shrug"],
   rehab:["heelwarm","calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck","mobility"], daily:["steps"]
 };
 const MUSCLE_ALSO = { // secondary muscles, for filtering and reference
@@ -659,10 +670,12 @@ const MUSCLE_ALSO = { // secondary muscles, for filtering and reference
   pushup:["triceps","shoulders","core"], dbbench:["triceps","shoulders"], chestpress:["triceps","shoulders"], incpress:["shoulders","triceps"], dbfloor:["triceps"],
   pullup:["biceps"], pulldown:["biceps"], dpulldown:["biceps"], row1:["biceps","reardelts"], csrow:["biceps","reardelts"], cablerow:["biceps"], drow:["biceps"], machrow:["biceps"],
   shpress:["triceps","sidedelts"], mshpress:["triceps"], facepull:["back"], dface:["back"], revfly:["back"], revdeck:["back"],
-  hammer:["forearms"], ropehammer:["forearms"], cgbench:["chest"], floorpress:["chest"], tridip:["chest"]
+  hammer:["forearms"], ropehammer:["forearms"], xhammer:["forearms"], reversecurl:["biceps"], rconccurl:["biceps"], waiter:["forearms"],
+  dbfly:["shoulders"], bfly:["shoulders"], bentrow2:["biceps","reardelts"], frontraise:["chest"], bfront:["chest"], bohp:["triceps"], revlunge:["glutes"],
+  bridge:["hamstrings","core"], sbridge:["hamstrings","core"], suitcase:["glutes"], shrug:["forearms"], cgbench:["chest"], floorpress:["chest"], tridip:["chest"]
 };
 Object.entries(MUSCLE_TAGS).forEach(([m, ks]) => ks.forEach(k => { if (EX[k]) EX[k].m = [m, ...(MUSCLE_ALSO[k] || [])]; }));
-const MUSCLE_NAME = {quads:"quads", hamstrings:"hamstrings", glutes:"glutes", chest:"chest", back:"back", shoulders:"shoulders", sidedelts:"side-delt", reardelts:"rear-delt", biceps:"biceps", triceps:"triceps", calves:"calf", core:"core", cardio:"cardio"};
+const MUSCLE_NAME = {quads:"quads", hamstrings:"hamstrings", glutes:"glutes", chest:"chest", back:"back", shoulders:"shoulders", sidedelts:"side-delt", reardelts:"rear-delt", biceps:"biceps", triceps:"triceps", calves:"calf", core:"core", cardio:"cardio", forearms:"forearm", traps:"trap"};
 const NO_SWAP = ["rehab","daily"];
 // Swap options when equipment is taken, in order of preference (filtered to the same main muscle).
 const ALTS = {
@@ -678,7 +691,7 @@ const ALTS = {
   calfst:["calfse","calfpress"], calfse:["calfst","calfpress"], run:["bike"], incwalk:["bike","walk"], intervals:["bike"]
 };
 // Bands and the door anchor stay home; machines, cables, barbells and cardio machines stay at the gym.
-const HOME_ONLY = ["circuit","dface","dpushdown","dpulldown","drow","dohext","pallof","bandankle","bandevert"];
+const HOME_ONLY = ["brot","bfly","bcrunch","bpullapart","bcurl","bhammer","bchop","bfront","blat","bohp","bkick","circuit","dface","dpushdown","dpulldown","drow","dohext","pallof","bandankle","bandevert"];
 const GYM_ONLY = ["squat","legpress","trapdl","hipthrust","legcurl","pullup","pulldown","cablerow","csrow","chestpress","mshpress","incpress","ohcable","pushdown","skull","ezcurl","preacher","cgbench","cablecr","kneeraise","facepull","calfse","run","intervals","incwalk","bike",
   "abcrunch","captain","pallofc","cablecurl","machcurl","ropehammer","tridip","cablelat","machlat","revdeck","pecdeck","machrow","hacksq","smithsq","legext","calfpress","backext"];
 const locOK = (a, loc) => loc === "gym" ? !HOME_ONLY.includes(a) : loc === "home" ? !GYM_ONLY.includes(a) : true;
@@ -690,7 +703,7 @@ function swapChoices(it){
   const inToday = new Set(items().map(x => x[0]));
   const pool = [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]
     .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && locOK(a, loc));
-  return [...(it[4] && !inToday.has(base) ? [base] : []), ...pool].slice(0, 6);
+  return [...(it[4] && !inToday.has(base) ? [base] : []), ...pool].slice(0, 8);
 }
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
@@ -703,8 +716,8 @@ const DAYS = {
     alt:{loc:"home", d:"Full Body C · home", x:[["heelwarm",1,"4 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["abwheel",3,"6–10"],["revcrunch",3,"10–15","o"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
   fri:{t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"4 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
     alt:{loc:"home", d:"Full Body D · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["drow",3,"12–15","A"],["latraise",3,"15–20","B"],["dface",2,"15–20","B"],["dbcurl",3,"10–15","C"],["dohext",3,"12–15","C"],["circuit",1,"max rounds","o"]]}},
-  sat:{t:"Sat", loc:"home", d:"Arms + core · home", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["dpushdown",3,"12–15","B"],["latraise",3,"15–20"],["pallof",3,"10/side"],["plank",3,"30–45 sec","o"],["abwheel",2,"6–10","o"],["sideplank",2,"30 sec","o"],["walk",1,"20–30 min","o"]],
-    alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
+  sat:{t:"Sat", loc:"home", d:"Arms + core · home", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["dpushdown",3,"12–15","B"],["latraise",3,"15–20"],["pallof",3,"10/side"],["plank",3,"30–45 sec","o"],["abwheel",2,"6–10","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["walk",1,"20–30 min","o"]],
+    alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
   sun:{t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000+"],["walk",1,"20 min, easy","o"]]}
 };
 const KUNIT = {steps:["steps"],lift:["lb","reps"],bw:["reps"],time:["sec"],min:["min"],rounds:["rounds"]};
@@ -750,6 +763,34 @@ const FORM = {
   legext:["Pad on your lower shins, knees lined up with the machine's pivot. Straighten your legs, squeeze your quads a second, lower slowly.","Isolates the quads; good as a finisher or when squat racks are full.","Moderate weight; no kicking the weight up."],
   calfpress:["On the leg press, balls of your feet on the bottom edge of the platform, legs straight but not locked. Press through your toes, then let your heels come back for a stretch.","Pause 2 seconds in the stretch at the bottom.","Keep the safety handles engaged. Weight through the big toe, not rolling outward."],
   backext:["Hips on the pad, ankles hooked. Lower your upper body forward, then rise until your body is in a straight line.","Squeeze your glutes to come up. Hold a plate at your chest to make it harder.","Don't arch past straight at the top."],
+  dbfly:["Lie on a bench or the floor, dumbbells above your chest, palms facing each other, elbows slightly bent. Open your arms in a wide arc until you feel a chest stretch, then hug them back together.","Keep the same slight elbow bend the whole time; it's a hugging motion, not a press. On the floor, the floor stops you at a safe depth.","Go light. Stop the stretch before your shoulders feel strained, especially on a bench."],
+  bentrow2:["Dumbbell in each hand, soft knees, hinge at the hips until your torso is about 45° or lower. Pull both dumbbells to your lower ribs, squeeze, lower with control.","Pause a second at the top. Elbows travel back past your body.","This loads your lower back more than the one-arm row. Brace hard, keep your back flat and your neck long. If your back tires before your upper back does, switch to the one-arm or chest-supported row."],
+  xhammer:["Stand tall, dumbbells at your sides, palms facing in. Curl one dumbbell up and across your body toward the opposite shoulder, lower, then switch.","Hits the brachialis and forearm, which thicken the arm from the side.","Elbow stays close to your side; no swinging."],
+  frontraise:["Stand tall, dumbbells in front of your thighs. Raise them straight in front of you to shoulder height, pause, lower slowly. Thumbs up (palms facing in) is easiest on the shoulders.","Palms down works the front of the shoulder. Palms up shifts a little work to the upper chest and biceps. Your presses already work the front delts hard, so keep these light.","Stop at shoulder height; don't arch your back or swing."],
+  revlunge:["Dumbbells at your sides. Step one foot back and lower until your back knee nearly touches the floor, then push through your front foot to stand back up.","Stepping back is easier on the knees than forward lunges, and your back foot lands on its toes, so less impact on the left heel.","Front knee tracks over your toes; torso tall. Hold onto something for balance if needed."],
+  reversecurl:["Stand tall, dumbbells in front of your thighs, palms facing down. Curl them up with your palms staying down, lower slowly.","Builds the brachioradialis on top of the forearm, which makes arms look thicker.","Much weaker than a normal curl; go light. Wrists stay straight."],
+  conccurl:["Sit on a bench, legs apart, back of your upper arm braced against your inner thigh. Curl the dumbbell up toward your shoulder, squeeze, lower all the way.","The braced arm takes away all cheating, so it isolates the biceps.","Lean forward from the hips, not by rounding your neck."],
+  rconccurl:["Same seated, braced position as a concentration curl, but palms facing down. Curl up, keeping the palm down, lower slowly.","Shifts the work to the forearm (brachioradialis).","Light weight; wrist stays straight."],
+  waiter:["Stand tall, hold one dumbbell vertically by its top end with both palms underneath, like a waiter holding a tray. Curl it up, keeping it level, lower slowly.","Keeps steady tension on the biceps through the whole rep.","Elbows stay at your sides; no leaning back."],
+  wristcurl:["Sit with forearms on your thighs or a bench, palms up, wrists just past the edge. Let the dumbbells roll toward your fingers, then curl your wrists up.","Strengthens grip and the inner forearm.","Light weight, slow reps; no jerking."],
+  rwristcurl:["Same setup as a wrist curl, but palms down. Lift the backs of your hands toward the ceiling, lower slowly.","Strengthens the top of the forearm and balances the wrist.","Very light; this is a small muscle."],
+  shrug:["Stand tall, dumbbells at your sides. Lift your shoulders straight up toward your ears, hold a second, lower slowly.","Builds the upper traps.","Your neck has strained before, so go light to moderate, move straight up and down (no rolling), and keep your head still. Skip it on days your neck is tight."],
+  suitcase:["Hold one heavy dumbbell at your side and stand tall (or walk slowly). Don't let your body lean toward the weight. Switch sides.","Trains the obliques to keep your spine straight, which protects your back. A safer swap for side bends.","Shoulders level, ribs down, breathe normally."],
+  ohext1:["Hold one dumbbell overhead, arm straight, other hand supporting the elbow. Lower the dumbbell behind your head by bending the elbow, then straighten.","Works the long head of the triceps, the biggest part of the back of the arm.","Elbow points up and stays close to your head; ribs down, no arching."],
+  kickback:["Hinge forward with one hand and knee on a bench (or a hand on a chair), upper arm along your side, elbow bent 90°. Straighten your arm back until it's in line with your body, squeeze, return.","Squeeze hard at the top; only the forearm moves.","Light weight; keep your back flat and neck long."],
+  bridge:["Lie on your back, knees bent, feet flat. Push through your feet and lift your hips until your body is in a line from shoulders to knees, squeeze your glutes 2 seconds, lower.","Squeeze at the top. Hold a dumbbell on your hips to make it harder.","Push through the whole foot. If your left heel is sore, shift pressure toward the middle of the foot. Don't arch your lower back at the top."],
+  sbridge:["Same as a glute bridge with one leg straight in the air. Lift with the planted leg, squeeze 2 seconds, lower. Switch sides.","Much harder than two legs; a great progression.","Hips stay level, no twisting. Same heel note: press through the midfoot on the left side if it's sore."],
+  brot:["Band anchored at chest height, stand side-on, hold the band at your chest with both hands, arms extended. Rotate away from the anchor, then return slowly.","Turn from your hips and upper back together; the arms just hold the band.","Small, controlled range. Don't twist from the lower back alone."],
+  bfly:["Band anchored behind you at chest height, a handle in each hand, arms out wide. Bring your hands together in front of your chest in a hugging motion, return slowly.","Slight elbow bend the whole time; squeeze at the middle.","Don't let the band pull your arms back past a comfortable stretch."],
+  bcrunch:["Band anchored high on the door. Kneel facing it, hands holding the band beside your head. Curl your ribs down toward your hips, return slowly.","Same as the cable crunch: the abs do the work, not the hips sitting back.","Hands and head move as one unit; never pull on your neck."],
+  bpullapart:["Stand tall, band in both hands at shoulder height, arms straight in front of you. Pull the band apart until your arms are out to the sides, squeeze your shoulder blades, return slowly.","Great for posture and rear delts. Easy to do often.","Shoulders down, no shrugging; ribs down."],
+  bcurl:["Stand on the band, handles in your hands, palms forward. Curl to your shoulders, squeeze, lower slowly.","The band gets hardest at the top, so squeeze there.","Elbows pinned to your sides."],
+  bhammer:["Stand on the band, palms facing each other. Curl to your shoulders, lower slowly.","Works the brachialis and forearms.","Wrists straight and neutral."],
+  bchop:["Band anchored high and to one side. Hold it with both hands, arms long. Pull it down and across your body toward the opposite hip, pivoting your back foot, then return slowly.","Power comes from your hips and core turning together.","Keep it controlled and light. Pivot the back foot so your lower back doesn't twist alone."],
+  bfront:["Stand on the band, handles in front of your thighs. Raise your arms straight in front to shoulder height, lower slowly.","Front delts already work in presses; keep these light.","No arching or swinging."],
+  blat:["Stand on the band, handles at your sides. Raise your arms out to the sides to shoulder height, lower slowly.","Builds the side delts that make shoulders look wider.","Stop at shoulder height; no shrugging."],
+  bohp:["Stand on the band, handles at your shoulders. Press overhead until your arms are straight, lower slowly.","Squeeze your glutes to keep your lower back from arching.","Ribs down; press straight up beside your head."],
+  bkick:["Band anchored low in front of you. Hinge forward, upper arm along your side, elbow bent. Straighten your arm back, squeeze, return.","Only the forearm moves.","Back flat, neck long."],
   legcurl:["Pad just above your heels, knees lined up with the machine's pivot. Curl your heels toward your glutes, pause, lower slowly.","Point your toes up toward your shins; the full straight-leg stretch at the bottom matters.","Keep your hips down on the pad (lying) or the thigh pad snug (seated). No bouncing."],
   lunge:["Hold a dumbbell in each hand. Step forward, lower until your back knee nearly touches the floor, then push through the front heel and step into the next lunge.","Long steps load the glutes more; shorter steps load the quads more.","Front knee tracks over your toes. Lunges land hard on the front heel, so go easy on your left side; switch to split squats if it aches."],
   cablerow:["Sit with your feet on the platform, knees slightly bent, back tall. Pull the handle to your lower ribs, squeezing your shoulder blades, then let your arms straighten fully.","Pause a second at your ribs and let your shoulders stretch forward at the end of each rep.","Don't rock your torso to move the weight. Neck long, eyes forward."],
@@ -812,7 +853,7 @@ const FORM = {
   steps:["Total steps for the day from a phone or watch.","8,000–10,000 a day burns more fat over a week than extra cardio sessions, without costing recovery.","Spread them out: a 10-minute walk after meals adds up fast and helps digestion."],
   walk:["A fast pace you could keep for 30 minutes while talking a little breathlessly, outdoors or on a treadmill.","Adds steps and calorie burn while helping recovery.","In winter dark or cold: bright layers, or the treadmill."]
 };
-const CORE_KEYS = ["abcrunch","captain","pallofc","pallof","abwheel","revcrunch","deadbug","cablecr","kneeraise","plank","sideplank","birddog"];
+const CORE_KEYS = ["bcrunch","brot","bchop","suitcase","abcrunch","captain","pallofc","pallof","abwheel","revcrunch","deadbug","cablecr","kneeraise","plank","sideplank","birddog"];
 function formHtml(k){
   const f = FORM[k]; if (!f) return "";
   const neck = CORE_KEYS.includes(k) ? `<p class="neck">Neck: tongue on the roof of the mouth, imagine a tennis ball between chin and chest. If the neck tenses first, end the set.</p>` : "";
@@ -823,6 +864,12 @@ function formHtml(k){
 
 /* ---------- Target muscles ---------- */
 const MUSCLE = {
+  dbfly:"Chest", bentrow2:"Upper back · Lats · Biceps", xhammer:"Brachialis · Forearms · Biceps", frontraise:"Front delts · Upper chest", revlunge:"Quads · Glutes",
+  reversecurl:"Forearms (brachioradialis) · Biceps", conccurl:"Biceps", rconccurl:"Forearms (brachioradialis) · Biceps", waiter:"Biceps",
+  wristcurl:"Forearm flexors", rwristcurl:"Forearm extensors", shrug:"Upper traps", suitcase:"Obliques · Deep core · Grip",
+  ohext1:"Triceps (long head)", kickback:"Triceps", bridge:"Glutes · Hamstrings", sbridge:"Glutes · Hamstrings · Hip stability",
+  brot:"Obliques · Deep core", bfly:"Chest", bcrunch:"Abs (rectus abdominis)", bpullapart:"Rear delts · Upper back", bcurl:"Biceps", bhammer:"Brachialis · Forearms · Biceps",
+  bchop:"Obliques · Deep core · Shoulders", bfront:"Front delts", blat:"Side delts", bohp:"Shoulders · Triceps", bkick:"Triceps",
   abcrunch:"Abs (rectus abdominis)", captain:"Lower abs · Hip flexors", pallofc:"Obliques · Deep core", cablecurl:"Biceps", machcurl:"Biceps", ropehammer:"Brachialis · Forearms · Biceps",
   tridip:"Triceps · Chest", cablelat:"Side delts", machlat:"Side delts", revdeck:"Rear delts · Upper back", pecdeck:"Chest", machrow:"Upper back · Lats · Biceps",
   hacksq:"Quads · Glutes", smithsq:"Quads · Glutes", legext:"Quads", calfpress:"Calves (gastrocnemius)", backext:"Glutes · Hamstrings · Lower back",
@@ -2517,6 +2564,7 @@ const ANIM_OF = {
   walk:"walk", steps:"walk", incwalk:"incwalk", run:"run", intervals:"run", bike:"bike", circuit:"circuit",
   dface:"facepull", dpushdown:"pushdown", dpulldown:"pulldown", drow:"cablerow", dohext:"ohcable", pallof:"pallof", abwheel:"abwheel",
   abcrunch:"cablecr", captain:"kneeraise", pallofc:"pallof", cablecurl:["curl","handle"], machcurl:"preacher", ropehammer:["curl","handle"], tridip:"pushdown", cablelat:"latraise", machlat:"latraise", revdeck:"revfly", pecdeck:"chestpress", machrow:"cablerow", hacksq:"squat", smithsq:"squat", calfpress:"calf",
+  bentrow2:"row1", xhammer:"curl", reversecurl:"curl", waiter:"curl", revlunge:"lunge", ohext1:"ohext", bcurl:["curl","handle"], bhammer:["curl","handle"], bcrunch:"cablecr", blat:"latraise", bohp:"shpress",
   heelwarm:"ankle", anklealpha:"ankle", shortfoot:"shortfoot", bandankle:"band", bandevert:"band", calfstretch:"calfstretch", balance:"balance", tibraise:"tibraise", chintuck:"chintuck", mobility:"mobility"
 };
 function animDef(k){ const m = ANIM_OF[k]; if (!m) return null; const [name, eq] = Array.isArray(m) ? m : [m]; const d = A[name]; return d ? {...d, eq: eq || d.eq} : null; }
