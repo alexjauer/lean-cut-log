@@ -248,6 +248,14 @@ textarea{resize:vertical;line-height:1.4}
 .pairnote{margin:0 0 6px}
 .donechip{color:var(--muted)}
 .donechip.alldone{color:var(--good)}
+.keepbar{display:flex;align-items:center;gap:8px;margin-top:6px}
+.keepbar button{padding:4px 10px;font-size:13px}
+#addExBtn{width:100%}
+.addlist{display:flex;flex-direction:column;gap:6px;margin-top:10px;max-height:50vh;overflow-y:auto}
+.addlist button{text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 12px}
+.addlist button span{font-size:12px;color:var(--muted)}
+#routineNote{margin:10px 0 0}
+#routineNote button{padding:4px 10px;font-size:13px;margin-left:6px}
 .libgrp h3{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .librow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .librow .lt{flex:1;min-width:0}
@@ -403,6 +411,15 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <div class="fbrow"><span class="label">When you check a set</span><button type="button" id="fbSound"></button><button type="button" id="fbBuzz"></button></div>
     </div>
     <div class="panel" id="exList"></div>
+    <div class="panel" id="routineBox">
+      <div class="rbhead"><button type="button" id="addExBtn" aria-expanded="false">＋ Add an exercise to this routine</button></div>
+      <div id="addExBox" hidden>
+        <div class="field"><label class="label" for="addQ">Search your collection</label><input type="search" id="addQ" placeholder="curl, glutes, band…"></div>
+        <div class="locpick" role="group" aria-label="Add as"><span class="label">Add as</span><button type="button" data-addas="main" aria-pressed="true">Main</button><button type="button" data-addas="opt" aria-pressed="false">If you have time</button></div>
+        <div id="addList" class="addlist"></div>
+      </div>
+      <p class="sub" id="routineNote" hidden></p>
+    </div>
     <div class="panel timebox">
       <div class="field"><label class="label" for="dur">Workout time (min)</label><input type="number" inputmode="numeric" min="1" max="300" id="dur" placeholder="e.g. 62"></div>
       <button type="button" id="timerBtn">Start timer</button>
@@ -1010,12 +1027,28 @@ addEventListener("hashchange", () => { route(); window.scrollTo(0,0); });
 /* ---------- LOG ---------- */
 let curDate = today(), curDay = dayForDate(curDate), curLoc = null, locChosen = false;
 let draft = null, done = {}; // draft: { exKey: [[a,b],...] } · done: { exKey: [true,false,...] }
+let rmArmed = null, rmT = null;
 let dirty = false, focusAfter = null, unlocked = false, notes = {}, wnote = "", noteOpen = new Set();
 const focus = {open:false, date:null, fin:[], back:[], opt:false, ended:null}; // one-at-a-time workout view
 const sid = () => curDate + "_" + curDay;
 const LOCNAME = {gym:"Gym", home:"Home", rest:"Recovery"};
 const sessionLoc = s => s.loc || (DAYS[s.day] ? DAYS[s.day].loc : "gym");
-function plan(day = curDay, loc = curLoc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
+// Your own edits to a day's routine (per weekday + gym/home), kept on this device and in backups.
+const PK = "leancut-plans";
+let planEdits = (() => { try { return JSON.parse(localStorage.getItem(PK) || "{}") || {}; } catch(e){ return {}; } })();
+function planEditsSave(){ try { localStorage.setItem(PK, JSON.stringify(planEdits)); } catch(e){} }
+function basePlan(day, loc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
+function plan(day = curDay, loc = curLoc){ const p = basePlan(day, loc), e = planEdits[day + "-" + p.loc]; return e && Array.isArray(e) ? {...p, x:e.filter(it => EX[it[0]]), edited:true} : p; }
+function editPlan(fn){
+  const p = plan(), id = curDay + "-" + p.loc, x = p.x.map(it => it.slice(0, 4));
+  fn(x);
+  // A superset letter left with only one exercise becomes a normal exercise.
+  const cnt = {}; x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""); if (L) cnt[L] = (cnt[L] || 0) + 1; });
+  x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""); if (L && cnt[L] < 2) r[3] = (r[3] || "").replace(L, ""); });
+  planEdits[id] = x; planEditsSave();
+  draftSave(); dirty = false; buildDraft(); renderDayPick(); renderExList();
+}
+const DEF_TARGET = {lift:"10–12", bw:"10–15", time:"30 sec", min:"10 min", rounds:"3 rounds", steps:"8,000"};
 const isOpt = it => /o/.test(it[3] || "");
 let swaps = {}, swapOpen = null, later = [];
 // Exercises you've removed from your collection (kept on this device and in backups).
@@ -1208,11 +1241,46 @@ function exCard(it){
       ${last && last.note ? `<p class="lastnote">📝 Last time: <b>${esc(last.note)}</b></p>` : ""}
       <div class="sets ${u.length===1?"one":""} ${CD_KINDS.includes(e.k)?"cd":""}">${rows}</div>
       ${L ? (notes[k] ? `<p class="exnote-ro">📝 ${esc(notes[k])}</p>` : "") : (notes[k] || noteOpen.has(k)) ? `<textarea class="exnote" data-note="${k}" rows="2" placeholder="Note: how it felt, why you stopped, what to change…" aria-label="Note for ${esc(e.n)}">${esc(notes[k] || "")}</textarea>` : ""}
+      ${!L && it[4] && swaps[it[4]] ? `<div class="keepbar"><span class="sub">Like it better?</span><button type="button" class="ghost" data-keep="${it[4]}">📌 Keep it every ${DAYS[curDay].t}</button></div>` : ""}
       ${L ? "" : swapHtml}
-      ${L ? "" : `<div class="ex-foot">${!canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button>${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}<button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
+      ${L ? "" : `<div class="ex-foot">${!canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button>${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}<button type="button" class="ghost" data-add="${k}">+ Set</button>${base !== "heelwarm" ? `<button type="button" class="ghost danger" data-rmex="${base}">${rmArmed === base ? `Tap again: remove from every ${DAYS[curDay].t}` : "✕ Remove"}</button>` : ""}${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
     </div>`;
 }
+let addAs = "main";
+function renderAddList(){
+  const q = ($("#addQ").value || "").trim().toLowerCase(), loc = plan().loc, inToday = new Set(items().map(x => x[0]));
+  const ks = Object.keys(EX).filter(k => !hidden.has(k) && !inToday.has(k) && locOK(k, loc) && EX[k].m && !NO_SWAP.includes(EX[k].m[0]) && !(loc === "home" && tooHeavyHome(k)) &&
+    (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + EX[k].m.join(" ")).toLowerCase().includes(q)));
+  ks.sort((a,b) => LIB_ORDER.indexOf(EX[a].m[0]) - LIB_ORDER.indexOf(EX[b].m[0]) || EX[a].n.localeCompare(EX[b].n));
+  $("#addList").innerHTML = ks.slice(0, 60).map(k => `<button type="button" data-addex="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || LIB_NAME[EX[k].m[0]])} · ${WHERE_TXT[whereOf(k)]}</span></button>`).join("") || `<p class="empty">Nothing matches.</p>`;
+}
+function renderRoutineNote(){
+  const p = plan(), box = $("#routineBox"), rest = p.loc === "rest";
+  box.hidden = wkLocked();
+  $("#routineNote").hidden = !p.edited;
+  if (p.edited) $("#routineNote").innerHTML = `✎ You've customized every ${DAYS[curDay].t}${DAYS[curDay].alt ? " (" + LOCNAME[p.loc] + ")" : ""} routine.<button type="button" class="ghost" id="resetPlan">${rmArmed === "_reset" ? "Tap again to reset" : "Reset to original"}</button>`;
+}
+$("#addExBtn").addEventListener("click", () => { const box = $("#addExBox"), open = box.hidden; box.hidden = !open; $("#addExBtn").setAttribute("aria-expanded", open); if (open) { renderAddList(); $("#addQ").focus(); } });
+$("#addQ").addEventListener("input", renderAddList);
+$("#routineBox").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.addas) { addAs = b.dataset.addas; document.querySelectorAll("[data-addas]").forEach(x => x.setAttribute("aria-pressed", x.dataset.addas === addAs)); return; }
+  if (b.dataset.addex) {
+    const k = b.dataset.addex;
+    editPlan(x => { const row = [k, EX[k].k === "min" || EX[k].k === "steps" ? 1 : 3, DEF_TARGET[EX[k].k] || "10–12", addAs === "opt" ? "o" : ""];
+      if (addAs === "opt") x.push(row); else { const i = x.findIndex(r => /o/.test(r[3] || "")); i < 0 ? x.push(row) : x.splice(i, 0, row); } });
+    $("#addExBox").hidden = true; $("#addExBtn").setAttribute("aria-expanded", "false"); $("#addQ").value = "";
+    toast($("#logToast"), `Added ${EX[k].n} to every ${DAYS[curDay].t}.`); feedback(false);
+    const c = document.querySelector(`.ex[data-ex="${k}"]`); if (c) c.scrollIntoView({block:"center", behavior:"smooth"}); return;
+  }
+  if (b.id === "resetPlan") {
+    if (rmArmed !== "_reset") { rmArmed = "_reset"; clearTimeout(rmT); rmT = setTimeout(() => { rmArmed = null; renderRoutineNote(); }, 3500); renderRoutineNote(); return; }
+    rmArmed = null; delete planEdits[curDay + "-" + plan().loc]; planEditsSave(); swaps = {}; later = [];
+    draftSave(); dirty = false; buildDraft(); renderDayPick(); renderExList(); toast($("#logToast"), "Back to the original routine."); return;
+  }
+});
 function renderExList(){
+  renderRoutineNote();
   const openSet = new Set([...document.querySelectorAll("#exList details[open]")].map(d => d.id));
   const its = items(), ess = its.filter(it => !isOpt(it)), opt = its.filter(isOpt);
   const hasPairs = its.some(it => pairOf(it));
@@ -1313,6 +1381,15 @@ const exClick = e => {
   else if (d.later) { const b = d.later, it = items().find(x => baseOf(x) === b), L = it && pairOf(it), grp = L ? items().filter(x => pairOf(x) === L).map(baseOf) : [b];
     if (grp.some(g => later.includes(g))) later = later.filter(x => !grp.includes(x)); else later.push(b);
     markDirty(); renderExList(); const c = document.querySelector(`.ex[data-ex="${it ? it[0] : b}"]`); if (c) c.scrollIntoView({block:"center", behavior:"smooth"}); return; }
+  else if (d.rmex) {
+    if (rmArmed !== d.rmex) { rmArmed = d.rmex; clearTimeout(rmT); rmT = setTimeout(() => { rmArmed = null; renderExList(); }, 3500); renderExList(); return; }
+    const b0 = d.rmex; rmArmed = null; later = later.filter(x => x !== b0); delete swaps[b0];
+    editPlan(x => { const i = x.findIndex(r => r[0] === b0); if (i >= 0) x.splice(i, 1); });
+    toast($("#logToast"), `Removed from every ${DAYS[curDay].t}. Reset anytime below the list.`); buzz(false); return; }
+  else if (d.keep) {
+    const b0 = d.keep, alt = swaps[b0]; if (!alt) return;
+    delete swaps[b0]; editPlan(x => { const r = x.find(r => r[0] === b0); if (r) r[0] = alt; });
+    toast($("#logToast"), `${EX[alt].n} is now part of every ${DAYS[curDay].t}.`); feedback(false); return; }
   else if (d.noteadd) { noteOpen.add(d.noteadd); renderExList(); const t = document.querySelector(`[data-note="${d.noteadd}"]`); if (t) t.focus(); return; }
   else if (d.swap) { swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
   else if (d.pick) { if (d.alt === d.pick) delete swaps[d.pick]; else swaps[d.pick] = d.alt; swapOpen = null; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); return; }
@@ -2386,7 +2463,7 @@ if (STANDALONE) {
   $("#backupPanel").hidden = false;
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
 }
-function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden]}; }
+function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden], plans:planEdits}; }
 $("#bkExport").addEventListener("click", async () => {
   const name = `lean-cut-backup-${today()}.json`;
   const blob = new Blob([JSON.stringify(backupData(), null, 1)], {type:"application/json"});
@@ -2406,6 +2483,7 @@ $("#bkImport").addEventListener("change", async e => {
     let n = 0;
     ["sessions","weights","measures","water","food"].forEach(k => { if (d[k] && typeof d[k] === "object") { Object.assign(state[k], d[k]); n += Object.keys(d[k]).length; } });
     if (Array.isArray(d.hidden)) { d.hidden.forEach(k => hidden.add(k)); hiddenSave(); }
+    if (d.plans && typeof d.plans === "object") { Object.assign(planEdits, d.plans); planEditsSave(); }
     lsSave(); dirty = false; renderAll();
     toast($("#bkToast"), `Imported ${n} entries`);
   } catch(err){ toast($("#bkToast"), "That file isn't a Lean Cut Log backup.", true); }
