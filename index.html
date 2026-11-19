@@ -2552,7 +2552,7 @@ if (STANDALONE) {
   $("#backupPanel").hidden = false;
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
 }
-function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden], plans:planEdits}; }
+function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden], plans:planEdits, rnotes}; }
 $("#bkExport").addEventListener("click", async () => {
   const name = `lean-cut-backup-${today()}.json`;
   const blob = new Blob([JSON.stringify(backupData(), null, 1)], {type:"application/json"});
@@ -2573,6 +2573,7 @@ $("#bkImport").addEventListener("change", async e => {
     ["sessions","weights","measures","water","food"].forEach(k => { if (d[k] && typeof d[k] === "object") { Object.assign(state[k], d[k]); n += Object.keys(d[k]).length; } });
     if (Array.isArray(d.hidden)) { d.hidden.forEach(k => hidden.add(k)); hiddenSave(); }
     if (d.plans && typeof d.plans === "object") { Object.assign(planEdits, d.plans); planEditsSave(); }
+    if (d.rnotes && typeof d.rnotes === "object") { Object.assign(rnotes, d.rnotes); try { localStorage.setItem(RNK, JSON.stringify(rnotes)); } catch(e){} }
     lsSave(); dirty = false; renderAll();
     toast($("#bkToast"), `Imported ${n} entries`);
   } catch(err){ toast($("#bkToast"), "That file isn't a Lean Cut Log backup.", true); }
