@@ -83,6 +83,24 @@ button.danger{color:var(--plate)}
 .sets .n{font-family:var(--f-num);font-size:12px;color:var(--muted);text-align:center}
 .sets input{padding:8px;text-align:center;font-family:var(--f-num)}
 .ex-foot{display:flex;gap:4px}
+.picker{position:fixed;inset:0;z-index:12;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+body.picking{overflow:hidden}
+.pkhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.pkhead > div{display:flex;flex-direction:column;min-width:0}
+.pkhead b{font-size:17px}
+.pkfilters{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.pkfilters input{width:100%;font-size:16px}
+.pkrow{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center}
+.pkrow::-webkit-scrollbar{display:none}
+.pkrow:empty{display:none}
+.pkrow .label{flex:none;margin-right:2px}
+.pkrow button{flex:none;padding:5px 11px;font-size:13px;white-space:nowrap}
+.pkrow button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.pklist{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:6px 12px calc(16px + env(safe-area-inset-bottom,0px))}
+.pklist h3{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.pklist button.pkit{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:9px 12px;margin-bottom:6px}
+.pklist button.pkit span{font-size:12px;color:var(--muted)}
+.pklist .pkback{border-color:var(--accent)}
 .focus{position:fixed;inset:0;z-index:8;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 body.focusing{overflow:hidden}
 body.focusing .tbar{z-index:9;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -648,6 +666,17 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
   </section>
 </main>
 
+<div class="picker" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="pkTitle">
+  <div class="pkhead"><div><b id="pkTitle"></b><span class="sub" id="pkSub"></span></div><button type="button" class="ghost" id="pkClose" aria-label="Close">✕</button></div>
+  <div class="pkfilters">
+    <input type="search" id="pkQ" placeholder="Search by name, muscle or equipment" aria-label="Search exercises">
+    <div class="pkrow" id="pkAs" role="group" aria-label="Add as"></div>
+    <div class="pkrow" id="pkLoc" role="group" aria-label="Where"></div>
+    <div class="pkrow" id="pkMus" role="group" aria-label="Muscle"></div>
+    <div class="pkrow" id="pkEq" role="group" aria-label="Equipment"></div>
+  </div>
+  <div class="pklist" id="pkList"></div>
+</div>
 <div class="focus" id="focus" hidden role="dialog" aria-label="Workout, one exercise at a time">
   <div class="fhead">
     <button type="button" class="ghost" id="fClose">☰ List</button>
@@ -1325,6 +1354,73 @@ function exCard(it){
     </div>`;
 }
 let addAs = "main";
+/* ---------- exercise picker: full list with filters (swap, replace in routine, add to routine) ---------- */
+const pk = {mode:null, base:null, q:"", loc:new Set(), mus:new Set(), eq:new Set()};
+function openPicker(mode, base){
+  const p = plan(), loc = p.loc === "rest" ? "" : p.loc;
+  Object.assign(pk, {mode, base:base || null, q:""});
+  pk.loc = new Set(loc ? [loc] : ["gym","home"]);
+  pk.mus = new Set(base && EX[base].m ? [EX[base].m[0]] : []);
+  pk.eq = new Set();
+  $("#pkQ").value = ""; $("#pkTitle").textContent = mode === "add" ? "Add an exercise" : mode === "swap" ? "Swap " + EX[items().find(it => baseOf(it) === base)[0]].n : "Replace " + EX[base].n;
+  $("#pkSub").textContent = mode === "add" ? `To every ${DAYS[curDay].t}${DAYS[curDay].alt ? " (" + LOCNAME[p.loc] + ")" : ""}` : mode === "swap" ? "Just for today. Logged under the new exercise." : `In every ${DAYS[curDay].t} routine`;
+  $("#picker").hidden = false; document.body.classList.add("picking"); renderPicker();
+}
+function closePicker(){ $("#picker").hidden = true; document.body.classList.remove("picking"); pk.mode = null; }
+function pkPass(k){
+  const w = whereOf(k);
+  if (!(w === "both" ? (pk.loc.has("gym") || pk.loc.has("home")) : pk.loc.has(w))) return false;
+  if (!pk.loc.has("gym") && tooHeavyHome(k)) return false;
+  if (pk.mus.size && !pk.mus.has((EX[k].m || [])[0])) return false; // main muscle
+  if (pk.eq.size && !(EX[k].eq || []).some(q => pk.eq.has(q))) return false;
+  if (pk.q && !(EX[k].n + " " + (MUSCLE[k] || "") + " " + eqText(k)).toLowerCase().includes(pk.q)) return false;
+  return true;
+}
+function renderPicker(){
+  const inToday = new Set(items().map(x => x[0]).concat(pk.mode === "add" || pk.mode === "replace" ? plan().x.map(x => x[0]) : []));
+  const pool = Object.keys(EX).filter(k => EX[k].m && !NO_SWAP.includes(EX[k].m[0]) && !hidden.has(k) && !inToday.has(k) && k !== pk.base);
+  const chip = (attr, v, label, on) => `<button type="button" data-${attr}="${v}" aria-pressed="${on}">${esc(label)}</button>`;
+  $("#pkAs").innerHTML = pk.mode === "add" ? `<span class="label">Add as</span>` + chip("pkas", "main", "Main", addAs === "main") + chip("pkas", "opt", "If you have time", addAs === "opt") : "";
+  $("#pkLoc").innerHTML = `<span class="label">Where</span>` + chip("pkloc", "gym", "Gym", pk.loc.has("gym")) + chip("pkloc", "home", "Home", pk.loc.has("home"));
+  const muses = LIB_ORDER.filter(g => !NO_SWAP.includes(g) && Object.keys(EX).some(k => EX[k].m && EX[k].m[0] === g));
+  $("#pkMus").innerHTML = `<span class="label">Muscle</span>` + chip("pkmus", "", "All", !pk.mus.size) + muses.map(g => chip("pkmus", g, LIB_NAME[g], pk.mus.has(g))).join("");
+  const eqs = Object.keys(EQ_NAME).filter(q => Object.keys(EX).some(k => (EX[k].eq || []).includes(q)));
+  $("#pkEq").innerHTML = `<span class="label">Type</span>` + chip("pkeq", "", "All", !pk.eq.size) + eqs.map(q => chip("pkeq", q, EQ_NAME[q], pk.eq.has(q))).join("");
+  const ks = pool.filter(pkPass);
+  const row = (k, cls = "") => `<button type="button" class="pkit ${cls}" data-pkpick="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}</span></button>`;
+  let html = "";
+  // Swapping back to the planned exercise comes first.
+  if (pk.mode === "swap") { const it = items().find(x => baseOf(x) === pk.base); if (it && it[4] && !hidden.has(pk.base)) html += `<h3>Original</h3>` + row(pk.base, "pkback").replace("<b>", "<b>Back to "); }
+  // Best matches first when the main muscle filter is on.
+  const pref = pk.base ? (ALTS[pk.base] || []).filter(k => ks.includes(k)).slice(0, 4) : [];
+  if (pref.length) html += `<h3>Best matches</h3>` + pref.map(k => row(k)).join("");
+  const rest = ks.filter(k => !pref.includes(k));
+  LIB_ORDER.forEach(g => { const gs = rest.filter(k => EX[k].m[0] === g).sort((a,b) => EX[a].n.localeCompare(EX[b].n)); if (gs.length) html += `<h3>${LIB_NAME[g]}</h3>` + gs.map(k => row(k)).join(""); });
+  if (!ks.length) html += `<p class="empty">Nothing matches these filters. Try turning one off.</p>`;
+  if (pk.mode === "add") html += `<button type="button" class="ghost" data-gocreate="1" style="margin-top:10px">＋ Not listed? Create a new exercise</button>`;
+  $("#pkList").innerHTML = html;
+  $("#pkSub").dataset.n = ks.length;
+}
+$("#pkClose").addEventListener("click", closePicker);
+$("#pkQ").addEventListener("input", () => { pk.q = $("#pkQ").value.trim().toLowerCase(); renderPicker(); });
+$("#picker").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return; const d = b.dataset;
+  const tog = (set, v) => { if (!v) set.clear(); else set.has(v) ? set.delete(v) : set.add(v); };
+  if (d.pkas) { addAs = d.pkas; renderPicker(); return; }
+  if (d.pkloc) { tog(pk.loc, d.pkloc); if (!pk.loc.size) pk.loc.add(d.pkloc === "gym" ? "home" : "gym"); renderPicker(); return; }
+  if (d.pkmus != null) { tog(pk.mus, d.pkmus); renderPicker(); return; }
+  if (d.pkeq != null) { tog(pk.eq, d.pkeq); renderPicker(); return; }
+  if (d.gocreate) { const q = $("#pkQ").value.trim(); closePicker(); location.hash = "progress"; setTimeout(() => { $("#libBox").open = true; cxOpen(); $("#cxName").value = q; $("#cxForm").scrollIntoView({block:"start"}); }, 50); return; }
+  if (d.pkpick) {
+    const k = d.pkpick, base = pk.base, mode = pk.mode; closePicker();
+    if (mode === "swap") { if (k === base) delete swaps[base]; else swaps[base] = k; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); }
+    else if (mode === "replace") { editPlan(x => { const r = x.find(r => r[0] === base); if (r) r[0] = k; }); toast($("#edToast"), `${EX[k].n} replaces ${EX[base].n}.`); buzz(false); }
+    else { editPlan(x => { const row = [k, EX[k].k === "min" || EX[k].k === "steps" ? 1 : 3, DEF_TARGET[EX[k].k] || "10–12", addAs === "opt" ? "o" : ""];
+        if (addAs === "opt") x.push(row); else { const i = x.findIndex(r => /o/.test(r[3] || "")); i < 0 ? x.push(row) : x.splice(i, 0, row); } });
+      toast($("#edToast"), `Added ${EX[k].n}.`); feedback(false); }
+    const c = document.querySelector(`.ex[data-ex="${k}"]`); if (c) c.scrollIntoView({block:"center", behavior:"smooth"});
+  }
+});
 function renderAddList(){
   const q = ($("#addQ").value || "").trim().toLowerCase(), loc = plan().loc, inToday = new Set(items().map(x => x[0]));
   const ks = Object.keys(EX).filter(k => !hidden.has(k) && !inToday.has(k) && locOK(k, loc) && EX[k].m && !NO_SWAP.includes(EX[k].m[0]) && !(loc === "home" && tooHeavyHome(k)) &&
@@ -1339,7 +1435,8 @@ function renderRoutineNote(){
   $("#routineNote").hidden = !p.edited;
   if (p.edited) $("#routineNote").innerHTML = `✎ You've customized every ${DAYS[curDay].t}${DAYS[curDay].alt ? " (" + LOCNAME[p.loc] + ")" : ""} routine.<button type="button" class="ghost" id="resetPlan">${rmArmed === "_reset" ? "Tap again to reset" : "Reset to original"}</button>`;
 }
-$("#addExBtn").addEventListener("click", () => { const box = $("#addExBox"), open = box.hidden; box.hidden = !open; $("#addExBtn").setAttribute("aria-expanded", open); if (open) { renderAddList(); $("#addQ").focus(); } });
+$("#addExBtn").addEventListener("click", () => openPicker("add"));
+$("#addExBtnOld") && $("#addExBtnOld").addEventListener("click", () => { const box = $("#addExBox"), open = box.hidden; box.hidden = !open; $("#addExBtn").setAttribute("aria-expanded", open); if (open) { renderAddList(); $("#addQ").focus(); } });
 $("#addQ").addEventListener("input", renderAddList);
 $("#routineBox").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
@@ -1478,7 +1575,7 @@ function planBlocks(x){ const out = []; x.forEach(r => { const L = (r[3] || "").
 function editClick(b){
   const d = b.dataset;
   if (d.swapall) { swapAll = d.swapall; renderExList(); return; }
-  if (d.swap) { swapAll = null; swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
+  if (d.swap) { openPicker("replace", d.swap); return; }
   if (d.epick) { const k = d.epick, alt = d.alt; editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[0] = alt; }); swapOpen = null; renderExList(); toast($("#edToast"), `${EX[alt].n} replaces ${EX[k].n}.`); buzz(false); return; }
   if (d.es) { const k = d.k; editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[1] = Math.max(1, Math.min(10, r[1] + (+d.es))); }); buzz(false); return; }
   if (d.mv) { const k = d.k, dir = +d.mv;
@@ -1534,7 +1631,7 @@ const exClick = e => {
     toast($("#logToast"), `${EX[alt].n} is now part of every ${DAYS[curDay].t}.`); feedback(false); return; }
   else if (d.noteadd) { noteOpen.add(d.noteadd); renderExList(); const t = document.querySelector(`[data-note="${d.noteadd}"]`); if (t) t.focus(); return; }
   else if (d.swapall) { swapAll = d.swapall; renderExList(); return; }
-  else if (d.swap) { swapAll = null; swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
+  else if (d.swap) { openPicker("swap", d.swap); return; }
   else if (d.pick) { if (d.alt === d.pick) delete swaps[d.pick]; else swaps[d.pick] = d.alt; swapOpen = null; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); return; }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
   else if (d.add) { const k = d.add, prev = draft[k][draft[k].length-1]; draft[k].push(prev.slice()); done[k].push(false); }
