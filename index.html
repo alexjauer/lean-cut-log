@@ -272,6 +272,13 @@ textarea{resize:vertical;line-height:1.4}
 #routineNote{margin:10px 0 0}
 #routineNote button{padding:4px 10px;font-size:13px;margin-left:6px}
 .libgrp h3{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.cxform{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;gap:10px}
+.cxform h3{margin:0}
+.cxform .field{flex:none}
+.cxchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.cxchips button{padding:4px 10px;font-size:13px}
+.cxchips button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.mine{font-size:11px;font-weight:600;color:var(--accent);margin-left:6px}
 .libeq{margin-top:10px}
 .libeq button{padding:5px 10px;font-size:13px}
 .librow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -472,6 +479,19 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
         <p class="sub" style="margin:8px 0">Turn off anything you don't want suggested. Removed exercises never show up in swaps, and if one is in a workout, the closest same-muscle exercise takes its place the next time you open that day. Your history is kept.</p>
         <div class="field"><label class="label" for="libQ">Search</label><input type="search" id="libQ" placeholder="curl, glutes, band…"></div>
         <div class="locpick libeq" id="libEq" role="group" aria-label="Filter by equipment"></div>
+        <button type="button" id="cxNew" style="width:100%;margin-top:12px">＋ Create a new exercise</button>
+        <form id="cxForm" class="cxform" hidden>
+          <h3 id="cxTitle">New exercise</h3>
+          <div class="field"><label class="label" for="cxName">Name</label><input type="text" id="cxName" maxlength="60" placeholder="e.g. Kettlebell swing" required></div>
+          <div class="field"><label class="label" for="cxKind">What you log</label><select id="cxKind"><option value="lift">Weight + reps</option><option value="bw">Reps only</option><option value="time">Time (seconds)</option><option value="min">Time (minutes)</option></select></div>
+          <div class="field"><label class="label" for="cxMain">Main muscle</label><select id="cxMain"></select></div>
+          <div class="field"><span class="label">Also works (optional)</span><div class="cxchips" id="cxAlso"></div></div>
+          <div class="field"><label class="label" for="cxEq">Main equipment</label><select id="cxEq"></select></div>
+          <div class="field"><span class="label">Also uses (optional)</span><div class="cxchips" id="cxEqAlso"></div></div>
+          <div class="field"><label class="label" for="cxWhere">Where</label><select id="cxWhere"><option value="auto">Based on the equipment</option><option value="both">Home or gym</option><option value="home">Home only</option><option value="gym">Gym only</option></select></div>
+          <div class="field"><label class="label" for="cxHow">How to do it (optional)</label><textarea id="cxHow" rows="3" placeholder="Setup, cues, anything to watch out for"></textarea></div>
+          <div class="savebar"><button type="submit" class="primary">Save exercise</button><button type="button" class="ghost" id="cxCancel">Cancel</button><span class="toast" id="cxToast" role="status"></span></div>
+        </form>
         <div id="libList"></div>
       </details>
     </div>
@@ -944,7 +964,7 @@ function formHtml(k){
   const f = FORM[k]; if (!f) return "";
   const neck = CORE_KEYS.includes(k) ? `<p class="neck">Neck: tongue on the roof of the mouth, imagine a tennis ball between chin and chest. If the neck tenses first, end the set.</p>` : "";
   const how = typeof f[0] === "string" ? esc(f[0]) : `${esc(f[0].lead)}<ul class="howlist">${f[0].items.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
-  return `${typeof formFig === "function" ? formFig(k) : ""}<dl class="form"><dt>How</dt><dd>${how}</dd><dt>Grow</dt><dd>${esc(f[1])}</dd><dt>Protect</dt><dd>${esc(f[2])}</dd></dl>${neck}`;
+  return `${typeof formFig === "function" ? formFig(k) : ""}<dl class="form">${f[0] ? `<dt>How</dt><dd>${how}</dd>` : ""}${f[1] ? `<dt>Grow</dt><dd>${esc(f[1])}</dd>` : ""}${f[2] ? `<dt>Protect</dt><dd>${esc(f[2])}</dd>` : ""}</dl>${neck}`;
 }
 
 
@@ -1309,6 +1329,7 @@ function renderAddList(){
     (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + EX[k].m.join(" ") + " " + eqText(k)).toLowerCase().includes(q)));
   ks.sort((a,b) => LIB_ORDER.indexOf(EX[a].m[0]) - LIB_ORDER.indexOf(EX[b].m[0]) || EX[a].n.localeCompare(EX[b].n));
   $("#addList").innerHTML = ks.slice(0, 60).map(k => `<button type="button" data-addex="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || LIB_NAME[EX[k].m[0]])} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}</span></button>`).join("") || `<p class="empty">Nothing matches.</p>`;
+  $("#addList").insertAdjacentHTML("beforeend", `<button type="button" class="ghost" data-gocreate="1"><b>＋ Not listed? Create a new exercise</b><span>Opens your exercise collection</span></button>`);
 }
 function renderRoutineNote(){
   const p = plan(), box = $("#routineBox"), rest = p.loc === "rest";
@@ -1320,6 +1341,7 @@ $("#addExBtn").addEventListener("click", () => { const box = $("#addExBox"), ope
 $("#addQ").addEventListener("input", renderAddList);
 $("#routineBox").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.gocreate) { location.hash = "progress"; setTimeout(() => { $("#libBox").open = true; cxOpen(); $("#cxName").value = $("#addQ").value.trim(); $("#cxForm").scrollIntoView({block:"start"}); }, 50); return; }
   if (b.dataset.addas) { addAs = b.dataset.addas; document.querySelectorAll("[data-addas]").forEach(x => x.setAttribute("aria-pressed", x.dataset.addas === addAs)); return; }
   if (b.dataset.addex) {
     const k = b.dataset.addex;
@@ -2583,7 +2605,7 @@ if (STANDALONE) {
   $("#backupPanel").hidden = false;
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
 }
-function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden], plans:planEdits, rnotes}; }
+function backupData(){ return {app:"lean-cut-log", v:1, exported:new Date().toISOString(), sessions:state.sessions, weights:state.weights, measures:state.measures, water:state.water, food:state.food, hidden:[...hidden], plans:planEdits, rnotes, custom:customEx}; }
 $("#bkExport").addEventListener("click", async () => {
   const name = `lean-cut-backup-${today()}.json`;
   const blob = new Blob([JSON.stringify(backupData(), null, 1)], {type:"application/json"});
@@ -2604,6 +2626,7 @@ $("#bkImport").addEventListener("change", async e => {
     ["sessions","weights","measures","water","food"].forEach(k => { if (d[k] && typeof d[k] === "object") { Object.assign(state[k], d[k]); n += Object.keys(d[k]).length; } });
     if (Array.isArray(d.hidden)) { d.hidden.forEach(k => hidden.add(k)); hiddenSave(); }
     if (d.plans && typeof d.plans === "object") { Object.assign(planEdits, d.plans); planEditsSave(); }
+    if (d.custom && typeof d.custom === "object") { Object.assign(customEx, d.custom); customSave(); Object.entries(d.custom).forEach(([k, c]) => { try { applyCustom(k, c); } catch(e){} }); }
     if (d.rnotes && typeof d.rnotes === "object") { Object.assign(rnotes, d.rnotes); try { localStorage.setItem(RNK, JSON.stringify(rnotes)); } catch(e){} }
     lsSave(); dirty = false; renderAll();
     toast($("#bkToast"), `Imported ${n} entries`);
@@ -2943,15 +2966,68 @@ function renderLib(){
       .sort((a,b) => EX[a].n.localeCompare(EX[b].n));
     if (!ks.length) return "";
     return `<div class="libgrp"><h3>${LIB_NAME[g]}</h3>${ks.map(k => { const off = hidden.has(k);
-      return `<div class="librow ${off ? "off" : ""}"><div class="lt"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}${inAnyPlan(k) ? " · in your plan" : ""}</span></div><button type="button" data-lib="${k}" aria-pressed="${!off}" aria-label="${esc(EX[k].n)}: ${off ? "removed, tap to add back" : "on, tap to remove"}">${off ? "Add back" : "✓ On"}</button></div>`; }).join("")}</div>`;
+      return `<div class="librow ${off ? "off" : ""}"><div class="lt"><b>${esc(EX[k].n)}${EX[k].custom ? `<span class="mine">YOURS</span>` : ""}</b><span>${esc(MUSCLE[k] || "")} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}${inAnyPlan(k) ? " · in your plan" : ""}</span></div>${EX[k].custom ? `<button type="button" class="ghost" data-cxedit="${k}" style="min-width:0">Edit</button>` : ""}<button type="button" data-lib="${k}" aria-pressed="${!off}" aria-label="${esc(EX[k].n)}: ${off ? "removed, tap to add back" : "on, tap to remove"}">${off ? "Add back" : "✓ On"}</button></div>`; }).join("")}</div>`;
   }).join("") || `<p class="empty">No exercises match.</p>`;
 }
 $("#libQ").addEventListener("input", renderLib);
 $("#libEq").addEventListener("click", e => { const b = e.target.closest("[data-leq]"); if (!b) return; libEq = b.dataset.leq; renderLib(); });
 $("#libList").addEventListener("click", e => {
+  const ed = e.target.closest("[data-cxedit]"); if (ed) { cxOpen(ed.dataset.cxedit); $("#cxForm").scrollIntoView({block:"start", behavior:"smooth"}); return; }
   const b = e.target.closest("[data-lib]"); if (!b) return;
   const k = b.dataset.lib; hidden.has(k) ? hidden.delete(k) : hidden.add(k); hiddenSave(); buzz(false); renderLib();
   if (!dirty && !focus.open) renderLog();
+});
+/* ---------- your own exercises ---------- */
+const CXK = "leancut-custom";
+let customEx = (() => { try { return JSON.parse(localStorage.getItem(CXK) || "{}") || {}; } catch(e){ return {}; } })();
+const GYM_EQ = ["bb","ez","trap","smith","mach","cable","bench","bar","cardio","plate"], HOME_EQ = ["band","loop","door"];
+function applyCustom(k, c){
+  EX[k] = {n:c.n, k:c.k, m:[c.m, ...(c.also || []).filter(x => x !== c.m)], eq:[c.eq, ...(c.eqAlso || []).filter(x => x !== c.eq)], custom:true};
+  MUSCLE[k] = [c.m, ...(c.also || [])].filter((x,i,a) => a.indexOf(x) === i).map(x => LIB_NAME[x] || x).join(" · ");
+  FORM[k] = [c.how || "", "", ""];
+  const w = c.where && c.where !== "auto" ? c.where : EX[k].eq.some(q => GYM_EQ.includes(q)) ? "gym" : HOME_EQ.includes(c.eq) ? "home" : "both";
+  [HOME_ONLY, GYM_ONLY].forEach(list => { const i = list.indexOf(k); if (i >= 0) list.splice(i, 1); });
+  if (w === "home") HOME_ONLY.push(k); if (w === "gym") GYM_ONLY.push(k);
+}
+Object.entries(customEx).forEach(([k, c]) => { try { applyCustom(k, c); } catch(e){} });
+function customSave(){ try { localStorage.setItem(CXK, JSON.stringify(customEx)); } catch(e){} }
+let cxEditing = null, cxAlso = new Set(), cxEqAlso = new Set();
+const CX_MUSCLES = LIB_ORDER.filter(g => g !== "daily");
+function cxChips(){
+  const main = $("#cxMain").value, eq = $("#cxEq").value;
+  $("#cxAlso").innerHTML = CX_MUSCLES.filter(g => g !== main && !["cardio","rehab"].includes(g)).map(g => `<button type="button" data-cxa="${g}" aria-pressed="${cxAlso.has(g)}">${LIB_NAME[g]}</button>`).join("");
+  $("#cxEqAlso").innerHTML = Object.keys(EQ_NAME).filter(q => q !== eq && !["none","bw"].includes(q)).map(q => `<button type="button" data-cxq="${q}" aria-pressed="${cxEqAlso.has(q)}">${EQ_NAME[q]}</button>`).join("");
+}
+function cxOpen(k){
+  cxEditing = k || null; const c = k ? customEx[k] : null;
+  $("#cxMain").innerHTML = CX_MUSCLES.map(g => `<option value="${g}">${LIB_NAME[g]}</option>`).join("");
+  $("#cxEq").innerHTML = Object.keys(EQ_NAME).map(q => `<option value="${q}">${EQ_NAME[q]}</option>`).join("");
+  $("#cxTitle").textContent = c ? "Edit exercise" : "New exercise";
+  $("#cxName").value = c ? c.n : ""; $("#cxKind").value = c ? c.k : "lift"; $("#cxMain").value = c ? c.m : "biceps";
+  $("#cxEq").value = c ? c.eq : "db"; $("#cxWhere").value = c ? (c.where || "auto") : "auto"; $("#cxHow").value = c ? (c.how || "") : "";
+  cxAlso = new Set(c ? c.also || [] : []); cxEqAlso = new Set(c ? c.eqAlso || [] : []);
+  $("#cxForm").hidden = false; $("#cxNew").hidden = true; cxChips(); $("#cxName").focus();
+}
+function cxClose(){ $("#cxForm").hidden = true; $("#cxNew").hidden = false; cxEditing = null; }
+$("#cxNew").addEventListener("click", () => cxOpen());
+$("#cxCancel").addEventListener("click", cxClose);
+$("#cxMain").addEventListener("change", () => { cxAlso.delete($("#cxMain").value); cxChips(); });
+$("#cxEq").addEventListener("change", () => { cxEqAlso.delete($("#cxEq").value); cxChips(); });
+$("#cxForm").addEventListener("click", e => {
+  const b = e.target.closest("[data-cxa],[data-cxq]"); if (!b) return;
+  const set = b.dataset.cxa ? cxAlso : cxEqAlso, v = b.dataset.cxa || b.dataset.cxq; set.has(v) ? set.delete(v) : set.add(v); cxChips();
+});
+$("#cxForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const n = $("#cxName").value.trim(); if (!n) { $("#cxName").focus(); return; }
+  if (!cxEditing && Object.values(EX).some(x => x.n.toLowerCase() === n.toLowerCase())) { toast($("#cxToast"), "There's already an exercise with that name.", true); return; }
+  const k = cxEditing || "cx" + Date.now().toString(36);
+  const c = {n, k:$("#cxKind").value, m:$("#cxMain").value, also:[...cxAlso], eq:$("#cxEq").value, eqAlso:[...cxEqAlso], where:$("#cxWhere").value, how:$("#cxHow").value.trim()};
+  if (cxEditing && customEx[k] && customEx[k].k !== c.k && sortedSessions().some(([,s]) => s.sets && s.sets[k])) c.k = customEx[k].k; // keep logged data readable
+  customEx[k] = c; customSave(); applyCustom(k, c); cxClose(); feedback(false);
+  $("#libQ").value = ""; libEq = ""; renderLib(); renderProgress && renderProgress();
+  const row = document.querySelector(`[data-lib="${k}"]`); if (row) row.scrollIntoView({block:"center", behavior:"smooth"});
+  toast($("#bkToast"), "");
 });
 function renderAll(){
   try { renderLib(); renderLog(); renderProgress(); renderWeight(); renderMeasures(); renderWater(); renderFood(); renderReport(); } catch(e){ console.error(e); }
