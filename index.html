@@ -262,7 +262,8 @@ textarea{resize:vertical;line-height:1.4}
 .setctl > :first-child{justify-self:start}
 .setctl > :last-child{justify-self:end}
 .setctl button:disabled{opacity:.35}
-.ex-foot.chg{border-top:1px solid var(--line);margin-top:6px;padding-top:4px}
+.ex-foot.chg{border-top:1px solid var(--line);margin-top:6px;padding-top:4px;align-items:center}
+.ex-foot.chg .sp{flex:1}
 .keepbar{display:flex;align-items:center;gap:8px;margin-top:6px}
 .keepbar button{padding:4px 10px;font-size:13px}
 #addExBtn{width:100%}
@@ -1317,9 +1318,10 @@ function exCard(it){
       ${L ? "" : (() => { const sw = !canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`;
         const kSwap = it[4] && swaps[it[4]] ? `<button type="button" class="ghost" data-keep="${it[4]}">📌 Keep this swap every ${DAYS[curDay].t}</button>` : "";
         const kSets = !it[4] && draft[k].length !== n && plan().x.some(r => r[0] === k) ? `<button type="button" class="ghost" data-keepsets="${k}" data-n="${draft[k].length}">📌 Keep ${draft[k].length} sets every ${DAYS[curDay].t}</button>` : "";
-        return sw || kSwap || kSets ? `<div class="ex-foot chg">${sw}${kSwap}${kSets}</div>` : ""; })()}
+        const later = !isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : "";
+        const note = notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`;
+        return `<div class="ex-foot chg">${sw}${kSwap}${kSets}<span class="sp"></span>${later}${note}</div>`; })()}
       ${L ? "" : swapHtml}
-      ${L ? "" : `<div class="ex-foot">${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}</div>`}
     </div>`;
 }
 let addAs = "main";
