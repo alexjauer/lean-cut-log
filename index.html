@@ -1858,12 +1858,15 @@ function renderCd(){
   const left = cdLeft();
   $("#cdTime").textContent = mmss(left + 999);
   $("#cdPause").textContent = cd.pausedLeft != null ? "▶ Resume" : "❚❚ Pause";
+  $("#cdPlus").textContent = `+${cdInc()}s`;
   $("#cdFill").style.width = (100 - left / (cd.total*1000) * 100) + "%";
   box.classList.toggle("paused", cd.pausedLeft != null);
   if (left <= 0 && cd.pausedLeft == null) cdDone();
 }
 $("#cdPause").addEventListener("click", () => { if (cd.pausedLeft != null) { cd.end = Date.now() + cd.pausedLeft; cd.pausedLeft = null; cdWake(true); } else { cd.pausedLeft = cdLeft(); cdWake(false); } renderCd(); });
-$("#cdPlus").addEventListener("click", () => { if (cd.pausedLeft != null) cd.pausedLeft += 30000; else cd.end += 30000; cd.total += 30; renderCd(); });
+// Extra time per tap: 30 sec for minute-long things (walks, runs), 15 for rest, 10 for second-long holds (planks).
+const cdInc = () => cd.k === "_rest" ? 15 : EX[cd.k] && EX[cd.k].k === "min" ? 30 : 10;
+$("#cdPlus").addEventListener("click", () => { const n = cdInc(); if (cd.pausedLeft != null) cd.pausedLeft += n*1000; else cd.end += n*1000; cd.total += n; renderCd(); });
 $("#cdCancel").addEventListener("click", cdStop);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && cd.k != null) { if (cd.pausedLeft == null) cdWake(true); renderCd(); } });
 setInterval(() => { if (timerGet()) renderTimer(); if (cd.k != null) renderCd(); }, 250);
