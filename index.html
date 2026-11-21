@@ -689,7 +689,7 @@ const EX = {
   pullup:{n:"Pull-up (assist lb, if any)",k:"lift"}, squat:{n:"Back squat",k:"lift"}, shpress:{n:"Seated dumbbell shoulder press",k:"lift"},
   csrow:{n:"Chest-supported dumbbell row",k:"lift"}, inccurl:{n:"Incline dumbbell curl",k:"lift"}, ohcable:{n:"Overhead cable triceps extension",k:"lift"},
   calfst:{n:"Standing calf raise",k:"lift"}, incwalk:{n:"Incline walk/jog",k:"min"},
-  trapdl:{n:"Trap-bar deadlift",k:"lift"}, dbbench:{n:"Flat dumbbell bench press",k:"lift"}, pulldown:{n:"Lat pulldown",k:"lift"},
+  trapdl:{n:"Trap-bar deadlift",k:"lift"}, dbbench:{n:"Flat dumbbell bench press",k:"lift"}, pulldown:{n:"Lat pulldown (wide grip)",k:"lift"},
   hammer:{n:"Hammer curl",k:"lift"}, cgbench:{n:"Close-grip bench press",k:"lift"}, calfse:{n:"Seated calf raise",k:"lift"},
   cablecr:{n:"Kneeling cable crunch",k:"lift"}, kneeraise:{n:"Hanging knee raise",k:"bw"}, run:{n:"Treadmill run (easy)",k:"min"},
   bss:{n:"Bulgarian split squat",k:"lift"}, chestpress:{n:"Machine chest press",k:"lift"}, latraise:{n:"Lateral raise",k:"lift"},
@@ -702,12 +702,12 @@ const EX = {
   legpress:{n:"Leg press",k:"lift"}, pushdown:{n:"Rope triceps pushdown",k:"lift"}, revfly:{n:"Bent-over reverse fly",k:"lift"},
   dbfloor:{n:"Dumbbell floor press",k:"lift"}, dbskull:{n:"Dumbbell skull crusher",k:"lift"}, revcrunch:{n:"Reverse crunch",k:"bw"}, ezcurl:{n:"EZ-bar curl",k:"lift"},
   hipthrust:{n:"Barbell hip thrust",k:"lift"}, legcurl:{n:"Leg curl (lying or seated)",k:"lift"}, lunge:{n:"Dumbbell walking lunge",k:"lift"},
-  cablerow:{n:"Seated cable row",k:"lift"}, mshpress:{n:"Machine shoulder press",k:"lift"}, incpress:{n:"Incline dumbbell press",k:"lift"}, bike:{n:"Stationary bike",k:"min"},
+  cablerow:{n:"Seated cable row (narrow grip)",k:"lift"}, mshpress:{n:"Machine shoulder press",k:"lift"}, incpress:{n:"Incline dumbbell press",k:"lift"}, bike:{n:"Stationary bike",k:"min"},
   dface:{n:"Face pull (door anchor)",k:"lift"}, dpushdown:{n:"Triceps pushdown (door anchor)",k:"lift"}, dpulldown:{n:"Lat pulldown (door anchor)",k:"lift"},
   drow:{n:"Seated row (door anchor)",k:"lift"}, dohext:{n:"Overhead triceps extension (door anchor)",k:"lift"}, pallof:{n:"Pallof press (door anchor)",k:"lift"}, abwheel:{n:"Ab wheel rollout (from knees)",k:"bw"},
   abcrunch:{n:"Ab crunch machine",k:"lift"}, captain:{n:"Captain's chair knee raise",k:"bw"}, pallofc:{n:"Cable Pallof press",k:"lift"},
-  cablecurl:{n:"Cable curl",k:"lift"}, machcurl:{n:"Machine preacher curl",k:"lift"}, ropehammer:{n:"Rope hammer curl (cable)",k:"lift"},
-  tridip:{n:"Seated dip machine",k:"lift"}, cablelat:{n:"Cable lateral raise",k:"lift"}, machlat:{n:"Machine lateral raise",k:"lift"},
+  cablecurl:{n:"Cable curl (straight bar)",k:"lift"}, machcurl:{n:"Machine preacher curl",k:"lift"}, ropehammer:{n:"Rope hammer curl (cable)",k:"lift"},
+  tridip:{n:"Triceps press / seated dip machine",k:"lift"}, cablelat:{n:"Cable lateral raise",k:"lift"}, machlat:{n:"Machine lateral raise",k:"lift"},
   revdeck:{n:"Reverse pec deck",k:"lift"}, pecdeck:{n:"Pec deck fly",k:"lift"}, machrow:{n:"Machine row (chest-supported)",k:"lift"},
   hacksq:{n:"Hack squat machine",k:"lift"}, smithsq:{n:"Smith machine squat",k:"lift"}, legext:{n:"Leg extension",k:"lift"},
   calfpress:{n:"Calf press on the leg press",k:"lift"}, backext:{n:"45° back extension",k:"bw"},
@@ -750,7 +750,7 @@ const MUSCLE_ALSO = { // secondary muscles, for filtering and reference
 };
 Object.entries(MUSCLE_TAGS).forEach(([m, ks]) => ks.forEach(k => { if (EX[k]) EX[k].m = [m, ...(MUSCLE_ALSO[k] || [])]; }));
 // Equipment each exercise uses, main piece first.
-const EQ_NAME = {db:"Dumbbell", bb:"Barbell", ez:"EZ bar", trap:"Trap bar", smith:"Smith machine", mach:"Machine", cable:"Cable", band:"Resistance band", loop:"Loop band", door:"Door anchor", kb:"Kettlebell", plate:"Weight plate", bw:"Bodyweight", bench:"Bench", bar:"Pull-up bar / station", wheel:"Ab wheel", handles:"Push-up handles", ankle:"Ankle weights", cardio:"Cardio machine", step:"Step / box", none:"No equipment"};
+const EQ_NAME = {db:"Dumbbell", bb:"Barbell", ez:"EZ bar", trap:"Trap bar", smith:"Smith machine", mach:"Machine", cable:"Cable", band:"Resistance band", loop:"Loop band", door:"Door anchor", kb:"Kettlebell", plate:"Plate-loaded machine", bw:"Bodyweight", bench:"Bench", bar:"Pull-up bar / station", wheel:"Ab wheel", handles:"Push-up handles", ankle:"Ankle weights", cardio:"Cardio machine", step:"Step / box", none:"No equipment"};
 const EQUIP_TAGS = {
   db:["goblet","dbrdl","row1","dbcurl","ohdb","shpress","csrow","inccurl","dbbench","hammer","bss","latraise","revfly","dbfloor","dbskull","lunge","incpress","dbfly","bentrow2","xhammer","frontraise","revlunge","reversecurl","conccurl","rconccurl","waiter","wristcurl","rwristcurl","shrug","suitcase","ohext1","kickback","circuit"],
   bb:["squat","cgbench","hipthrust"], ez:["ezcurl","skull","preacher"], trap:["trapdl"], smith:["smithsq"],
@@ -763,13 +763,13 @@ const EQUIP_TAGS = {
 };
 const EQUIP_ALSO = {
   shpress:["bench"], csrow:["bench"], inccurl:["bench"], dbbench:["bench"], bss:["bench"], incpress:["bench"], dbfly:["bench"], conccurl:["bench"], rconccurl:["bench"], kickback:["bench"], dbskull:["bench"],
-  cgbench:["bench"], hipthrust:["bench","plate"], skull:["bench"], preacher:["bench","db"], pullup:["mach"], squat:["plate"], trapdl:["plate"], smithsq:["plate"],
+  cgbench:["bench"], hipthrust:["bench"], skull:["bench"], preacher:["bench","db"], pullup:["mach"],
   pushup:["handles"], deadbug:["ankle"], birddog:["ankle"], revcrunch:["ankle"], bridge:["db","loop"], sbridge:["db"], calfst:["db","step"], floorpress:["db"],
   heelwarm:["band"], dface:["band"], dpushdown:["band"], dpulldown:["band"], drow:["band"], dohext:["band"], pallof:["band"], bcrunch:["band"], bchop:["band"], brot:["band"], bfly:["band"], circuit:["bw"]
 };
 Object.entries(EQUIP_TAGS).forEach(([q, ks]) => ks.forEach(k => { if (EX[k]) EX[k].eq = [q, ...(EQUIP_ALSO[k] || [])]; }));
 const eqText = k => (EX[k].eq || []).map(q => EQ_NAME[q]).join(" + ");
-const MUSCLE_NAME = {quads:"quads", hamstrings:"hamstrings", glutes:"glutes", chest:"chest", back:"back", shoulders:"shoulders", sidedelts:"side-delt", reardelts:"rear-delt", biceps:"biceps", triceps:"triceps", calves:"calf", core:"core", cardio:"cardio", forearms:"forearm", traps:"trap"};
+const MUSCLE_NAME = {adductors:"inner-thigh", quads:"quads", hamstrings:"hamstrings", glutes:"glutes", chest:"chest", back:"back", shoulders:"shoulders", sidedelts:"side-delt", reardelts:"rear-delt", biceps:"biceps", triceps:"triceps", calves:"calf", core:"core", cardio:"cardio", forearms:"forearm", traps:"trap"};
 const NO_SWAP = ["rehab","daily"];
 // Swap options when equipment is taken, in order of preference (filtered to the same main muscle).
 const ALTS = {
@@ -805,7 +805,7 @@ function swapChoices(it){
   const inToday = new Set(items().map(x => x[0]));
   const pool = [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]
     .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && !hidden.has(a) && locOK(a, loc) && !(loc === "home" && tooHeavyHome(a)));
-  return [...(it[4] && !inToday.has(base) && !hidden.has(base) ? [base] : []), ...pool].slice(0, 8);
+  return [...(it[4] && !inToday.has(base) && !hidden.has(base) ? [base] : []), ...pool];
 }
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
@@ -851,7 +851,7 @@ const FORM = {
   abcrunch:["Set the seat so the chest pad or handles sit at your upper chest. Hold the handles, then curl your ribs down toward your hips and return slowly.","Exhale hard as you crunch and pause a second at the bottom. The abs move the weight, not your arms or hips.","Hands rest on the handles; don't pull with your arms or tuck your chin hard. Go lighter if your neck tightens."],
   captain:["Back against the pad, forearms on the arm rests, legs hanging. Raise your knees toward your chest and curl your pelvis up at the top, then lower slowly.","The pelvis curl at the top is what works the lower abs; just lifting your knees mostly works the hip flexors.","Shoulders pressed down, no swinging. Head stays against the pad."],
   pallofc:["Cable at chest height, stand side-on with feet hip-width apart. Hold the handle at your chest, press it straight out, hold 2 seconds, bring it back.","The work is resisting the cable pulling you around. Step farther away to make it harder.","Hips and shoulders stay square to the front the whole time. Do both sides."],
-  cablecurl:["Straight bar or EZ handle on a low cable. Stand tall, elbows at your sides, curl to your shoulders, lower over 3 seconds.","The cable keeps tension at the bottom, where dumbbells go slack.","Elbows stay pinned; no leaning back."],
+  cablecurl:["Straight bar on a low cable. Stand tall, elbows at your sides, curl to your shoulders, lower over 3 seconds.","The cable keeps tension at the bottom, where dumbbells go slack.","Elbows stay pinned; no leaning back."],
   machcurl:["Set the seat so your upper arms lie flat on the pad and your elbows line up with the machine's pivot. Curl up, squeeze, lower all the way.","The pad stops any cheating, so every rep is pure biceps.","Don't let the weight drop at the bottom; control the last few inches."],
   ropehammer:["Rope on a low cable, palms facing each other. Elbows at your sides, curl the rope up to your shoulders, lower slowly.","Builds the brachialis and forearms, the muscles that add arm thickness from the side.","Wrists straight and neutral, no rocking."],
   tridip:["Sit with the handles at your sides, chest up. Press the handles down until your arms are straight, then let them rise to about 90° at the elbow.","Squeeze your triceps hard at the bottom. Easy to load heavy safely.","Shoulders down and back; don't let them roll forward at the top."],
@@ -1122,7 +1122,7 @@ function editPlan(fn){
 }
 const DEF_TARGET = {lift:"10–12", bw:"10–15", time:"30 sec", min:"10 min", rounds:"3 rounds", steps:"8,000"};
 const isOpt = it => /o/.test(it[3] || "");
-let swaps = {}, swapOpen = null, later = [];
+let swaps = {}, swapOpen = null, later = [], swapAll = null;
 // Exercises you've removed from your collection (kept on this device and in backups).
 const HK = "leancut-hidden";
 let hidden = (() => { try { return new Set(JSON.parse(localStorage.getItem(HK) || "[]")); } catch(e){ return new Set(); } })();
@@ -1296,7 +1296,7 @@ function exInput(k, i, j, v, lock){
 function exCard(it){
   const [k,n,target] = it, e = EX[k], u = KUNIT[e.k], last = lastFor(k, curDate), up = upInfo(k, n, target), pair = pairOf(it);
   const base = it[4] || k, choices = swapChoices(it) || [], canSwap = swapChoices(it) !== null, prim = (EX[base].m || [])[0];
-  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${esc(EQ_NAME[(EX[a].eq || [])[0]] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
+  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.slice(0, swapAll === base ? 999 : 6).map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${esc(EQ_NAME[(EX[a].eq || [])[0]] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}${choices.length > 6 && swapAll !== base ? `<button type="button" class="ghost" data-swapall="${base}">Show all ${choices.length} options</button>` : ""}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
   const allDone = done[k].length > 0 && done[k].every(Boolean);
   const anyPR = draft[k].some((r,i) => isPR(k, i));
   const L = wkLocked();
@@ -1362,7 +1362,7 @@ $("#routineBox").addEventListener("click", e => {
 function planCard(it){
   const [k, n, target] = it, e = EX[k], base = baseOf(it), last = lastFor(k, curDate), pair = pairOf(it), ed = mode === "edit", up = upInfo(k, n, target);
   const choices = ed ? (swapChoices(it) || []).filter(a => a !== base) : [], prim = (EX[base].m || [])[0], rn = rnoteOf(base);
-  const swapHtml = ed && swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Replace in this routine with another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-epick="${base}" data-alt="${a}"><b>${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}</div>` : "";
+  const swapHtml = ed && swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Replace in this routine with another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.slice(0, swapAll === base ? 999 : 6).map(a => `<button type="button" data-epick="${base}" data-alt="${a}"><b>${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}${choices.length > 6 && swapAll !== base ? `<button type="button" class="ghost" data-swapall="${base}">Show all ${choices.length} options</button>` : ""}</div>` : "";
   const edHtml = !ed ? "" : `<div class="edrow">
       <span class="edgrp"><button type="button" class="ghost" data-mv="-1" data-k="${base}" aria-label="Move ${esc(e.n)} up">↑</button><button type="button" class="ghost" data-mv="1" data-k="${base}" aria-label="Move ${esc(e.n)} down">↓</button></span>
       <span class="edgrp"><span class="label">Sets</span><button type="button" class="ghost" data-es="-1" data-k="${base}" aria-label="One set fewer">−</button><b class="num">${n}</b><button type="button" class="ghost" data-es="1" data-k="${base}" aria-label="One set more">+</button></span>
@@ -1477,7 +1477,8 @@ function setReady(k, i){ const r = draft[k][i]; return (EX[k].k === "lift" ? (["
 function planBlocks(x){ const out = []; x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""), last = out[out.length-1]; if (L && last && last.L === L) last.rows.push(r); else out.push({L, opt:/o/.test(r[3] || ""), rows:[r]}); }); return out; }
 function editClick(b){
   const d = b.dataset;
-  if (d.swap) { swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
+  if (d.swapall) { swapAll = d.swapall; renderExList(); return; }
+  if (d.swap) { swapAll = null; swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
   if (d.epick) { const k = d.epick, alt = d.alt; editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[0] = alt; }); swapOpen = null; renderExList(); toast($("#edToast"), `${EX[alt].n} replaces ${EX[k].n}.`); buzz(false); return; }
   if (d.es) { const k = d.k; editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[1] = Math.max(1, Math.min(10, r[1] + (+d.es))); }); buzz(false); return; }
   if (d.mv) { const k = d.k, dir = +d.mv;
@@ -1532,7 +1533,8 @@ const exClick = e => {
     delete swaps[b0]; editPlan(x => { const r = x.find(r => r[0] === b0); if (r) r[0] = alt; });
     toast($("#logToast"), `${EX[alt].n} is now part of every ${DAYS[curDay].t}.`); feedback(false); return; }
   else if (d.noteadd) { noteOpen.add(d.noteadd); renderExList(); const t = document.querySelector(`[data-note="${d.noteadd}"]`); if (t) t.focus(); return; }
-  else if (d.swap) { swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
+  else if (d.swapall) { swapAll = d.swapall; renderExList(); return; }
+  else if (d.swap) { swapAll = null; swapOpen = swapOpen === d.swap ? null : d.swap; renderExList(); return; }
   else if (d.pick) { if (d.alt === d.pick) delete swaps[d.pick]; else swaps[d.pick] = d.alt; swapOpen = null; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); return; }
   else if (d.up) { const k = d.up, w = +d.w; draft[k].forEach((r,i) => { if (!done[k][i]) r[0] = w; }); }
   else if (d.add) { const k = d.add, prev = draft[k][draft[k].length-1]; draft[k].push(prev.slice()); done[k].push(false); }
@@ -2957,8 +2959,8 @@ function animTick(ts){
 }
 document.addEventListener("toggle", e => { if (e.target.open && !animRaf && !reduceMotion()) animRaf = requestAnimationFrame(animTick); }, true);
 
-const LIB_ORDER = ["biceps","triceps","core","glutes","quads","hamstrings","chest","back","shoulders","sidedelts","reardelts","forearms","traps","calves","cardio","rehab","daily"];
-const LIB_NAME = {biceps:"Biceps", triceps:"Triceps", core:"Core", glutes:"Glutes", quads:"Quads", hamstrings:"Hamstrings", chest:"Chest", back:"Back", shoulders:"Shoulders", sidedelts:"Side delts", reardelts:"Rear delts", forearms:"Forearms", traps:"Traps", calves:"Calves", cardio:"Cardio", rehab:"Heel rehab + mobility", daily:"Daily"};
+const LIB_ORDER = ["biceps","triceps","core","glutes","quads","hamstrings","adductors","chest","back","shoulders","sidedelts","reardelts","forearms","traps","calves","cardio","rehab","daily"];
+const LIB_NAME = {adductors:"Inner thighs", biceps:"Biceps", triceps:"Triceps", core:"Core", glutes:"Glutes", quads:"Quads", hamstrings:"Hamstrings", chest:"Chest", back:"Back", shoulders:"Shoulders", sidedelts:"Side delts", reardelts:"Rear delts", forearms:"Forearms", traps:"Traps", calves:"Calves", cardio:"Cardio", rehab:"Heel rehab + mobility", daily:"Daily"};
 function inAnyPlan(k){ return Object.values(DAYS).some(D => [D, D.alt].filter(Boolean).some(p => p.x.some(it => it[0] === k))); }
 let libEq = "";
 function renderLib(){
@@ -2982,6 +2984,64 @@ $("#libList").addEventListener("click", e => {
   const k = b.dataset.lib; hidden.has(k) ? hidden.delete(k) : hidden.add(k); hiddenSave(); buzz(false); renderLib();
   if (!dirty && !focus.open) renderLog();
 });
+/* ---------- gym exercise library (cables, machines, Smith, plate-loaded, kettlebell, cardio) ---------- */
+// [key, name, log kind, muscles (main first), equipment (main first), where, [how, grow, protect], animation]
+const GYM_LIB = [
+  // Cables
+  ["ccurlh","Cable curl (single handle)","lift",["biceps"],["cable"],"gym",["Handle on a low cable. Stand side-on or facing the stack, elbow at your side. Curl to your shoulder, squeeze, lower slowly. One arm at a time.","Constant tension from the bottom to the top; great for mind-muscle feel.","Elbow stays pinned; no leaning back."],["curl","handle"]],
+  ["ccurlezn","Cable EZ-bar curl (narrow grip)","lift",["biceps","forearms"],["cable","ez"],"gym",["EZ attachment on a low cable, hands on the inner angled grips. Curl to your shoulders, lower over 3 seconds.","A narrow grip shifts work toward the outer (long) head of the biceps, which builds the peak.","Elbows at your sides; wrists straight."],["curl","handle"]],
+  ["ccurlezw","Cable EZ-bar curl (wide grip)","lift",["biceps"],["cable","ez"],"gym",["EZ attachment on a low cable, hands on the outer grips. Curl to your shoulders, lower over 3 seconds.","A wide grip shifts work toward the inner (short) head, which adds thickness.","Elbows at your sides; no rocking."],["curl","handle"]],
+  ["crevcurl","Cable reverse curl","lift",["forearms","biceps"],["cable"],"gym",["Straight bar on a low cable, palms facing down. Curl up keeping the palms down, lower slowly.","Builds the brachioradialis on top of the forearm for thicker-looking arms.","Light weight; wrists straight."],["curl","handle"]],
+  ["chighcurl","High cable curl","lift",["biceps"],["cable"],"gym",["Handles on both high cables, stand between them, arms out to the sides at shoulder height, palms up. Curl the handles toward your ears, squeeze, return slowly.","Hits the biceps in a fully shortened position; a great finisher with a big squeeze.","Upper arms stay level; don't let the elbows drop."],null],
+  ["cfly","Cable chest fly","lift",["chest","shoulders"],["cable"],"gym",["Pulleys at shoulder height, a handle in each hand, one foot forward. Bring your hands together in front of your chest in a hugging arc, squeeze, return slowly to a stretch.","Constant tension through the whole range; slight bend in the elbows the whole time.","Don't let the handles pull your shoulders back past a comfortable stretch."],null],
+  ["cflyi","Cable chest fly (incline, low to high)","lift",["chest","shoulders"],["cable"],"gym",["Pulleys low. Sweep the handles up and together to upper-chest height, squeeze, return slowly.","Targets the upper chest, the area under the collarbones.","Keep the shoulders down and back; light weight."],null],
+  ["cflyd","Cable chest fly (decline, high to low)","lift",["chest","triceps"],["cable"],"gym",["Pulleys high. Sweep the handles down and together in front of your hips, squeeze, return slowly.","Targets the lower chest.","Slight forward lean; no shrugging."],null],
+  ["ckick","Cable triceps kickback","lift",["triceps"],["cable"],"gym",["Handle (or just the cable end) on a low pulley. Hinge forward, upper arm along your side, elbow bent. Straighten your arm back, squeeze, return slowly.","The cable keeps tension at the top, where dumbbell kickbacks go light.","Back flat, neck long; only the forearm moves."],null],
+  ["ctwist","Cable twist (horizontal)","lift",["core"],["cable"],"gym",["Cable at chest height, stand side-on, arms extended holding the handle. Rotate away from the stack, then return slowly.","Turn the hips and upper back together; arms just hold the handle.","Small, controlled range. Don't twist from the lower back alone; go light."],null],
+  ["ctwistd","Cable woodchop (high to low)","lift",["core","shoulders"],["cable"],"gym",["Cable high, stand side-on. Pull the handle down and across your body toward the opposite hip, pivoting your back foot, then return slowly.","Power comes from the hips and core turning together.","Pivot the back foot so your lower back doesn't twist alone. Controlled, light to moderate."],null],
+  ["cfront","Cable front raise","lift",["shoulders","chest"],["cable"],"gym",["Low cable behind you or between your feet, straight bar or rope. Raise straight in front to shoulder height, lower slowly.","Your presses already work the front delts; keep these light.","Stop at shoulder height; no arching."],null],
+  ["crowwide","Seated cable row (wide grip)","lift",["back","reardelts","biceps"],["cable"],"gym",["Wide bar on the seated row, overhand grip. Pull to your upper stomach with elbows flared about 45°, squeeze the shoulder blades, let your arms straighten.","A wide grip shifts work to the upper back and rear delts.","Don't rock your torso; neck long."],["cablerow"]],
+  ["pdnarrow","Lat pulldown (narrow grip)","lift",["back","biceps"],["cable"],"gym",["V-handle or close-grip bar on the pulldown. Lean back slightly and pull to your upper chest, elbows driving down, then let your arms straighten fully.","Lets the lats stretch more at the top; drive the elbows toward your back pockets.","No yanking with the body; head stays neutral."],["pulldown"]],
+  ["pdunder","Lat pulldown (underhand grip)","lift",["back","biceps"],["cable"],"gym",["Shoulder-width bar, palms facing you. Pull to your upper chest, squeeze, let your arms straighten fully.","Brings in more biceps along with the lats.","Control the way up; shoulders down."],["pulldown"]],
+  ["cside","Cable side bend","lift",["core"],["cable"],"gym",["Handle on a low cable, stand side-on, hold it in the far hand. Bend slightly away from the cable, then return to upright.","Works the obliques.","Your back has strained before: keep it light and the range small, and stop if your lower back talks. A suitcase hold works the same muscles without bending."],null],
+  ["tpushbar","Triceps pushdown (straight bar)","lift",["triceps"],["cable"],"gym",["Straight bar on a high cable. Elbows pinned at your sides, push down until your arms are straight, let it rise to chest height.","Lets you load heavier than the rope.","Don't lean over the bar or let the elbows drift forward."],["pushdown"]],
+  ["tpushv","Triceps pushdown (V-bar)","lift",["triceps"],["cable"],"gym",["V-bar on a high cable, thumbs up. Elbows at your sides, push down to straight arms, squeeze, let it rise.","A comfortable neutral grip for heavier work.","Only the forearms move."],["pushdown"]],
+  ["cupright","Cable upright row (rope)","lift",["sidedelts","traps"],["cable"],"gym",["Rope on a low cable. Pull the rope up along your body, elbows leading and wider than your hands, to about chest height, lower slowly.","Works the side delts and upper traps.","Elbows no higher than your shoulders; stop if your shoulder pinches. Light weight; head still for your neck."],null],
+  // Machines
+  ["mbackext","Back extension machine","lift",["hamstrings","glutes"],["mach"],"gym",["Seated, pad across your upper back. Push back until your body is straight, pause, return slowly.","Squeeze your glutes to drive the movement.","Light to moderate weight, smooth reps; don't lean back past straight."],null],
+  ["mcurl","Machine biceps curl","lift",["biceps"],["mach"],"gym",["Elbows lined up with the machine's pivot, arms on the pad. Curl up, squeeze, lower all the way.","The machine keeps the arm fixed, so it's all biceps.","Control the lowering."],null],
+  ["mkick","Glute kickback machine","lift",["glutes","hamstrings"],["mach"],"gym",["Chest on the pad, foot on the platform. Push the leg back and up, squeeze your glute at the top, return slowly.","The squeeze at the top is what counts.","Don't arch your lower back to get higher; keep your hips square."],null],
+  ["madd","Hip adduction machine","lift",["adductors"],["mach"],"gym",["Sit with your back against the pad, pads on the inside of your knees. Squeeze your knees together, pause, return slowly to a stretch.","Strengthens the inner thighs, which help squats and protect the groin.","Start with a comfortable stretch; don't bounce at the open end."],null],
+  ["mrot","Torso rotation machine","lift",["core"],["mach"],"gym",["Sit with your chest against the pad and turn against the resistance, then return slowly. Both directions.","Works the obliques.","Light weight, controlled; don't force the end of the range."],null],
+  ["massdip","Assisted dip machine","lift",["triceps","chest"],["mach"],"gym",["Kneel or stand on the pad, hands on the dip handles. Lower until your elbows are about 90°, then press up to straight arms. Log the assist weight (more assist = easier).","Stay upright to hit the triceps; lean forward for more chest.","Don't sink below 90°; it strains the front of the shoulder."],null],
+  ["mtriext","Machine triceps extension","lift",["triceps"],["mach"],"gym",["Elbows on the pad, lined up with the pivot. Straighten your arms, squeeze, return slowly.","Pure triceps isolation with no balance needed.","Control the return."],null],
+  // Smith machine
+  ["sbench","Smith machine bench press","lift",["chest","triceps","shoulders"],["smith","bench"],"gym",["Flat bench under the bar so it lands on your mid-chest. Lower under control, press up.","The fixed path lets you push hard safely.","Set the safety stops just above your chest. Shoulder blades pinned."],["bench","bar"]],
+  ["sbenchi","Smith machine incline press","lift",["chest","shoulders","triceps"],["smith","bench"],"gym",["Bench at about 30°, bar lands on your upper chest. Lower under control, press up.","Targets the upper chest.","Set the safety stops; shoulder blades pinned."],["incline","bar"]],
+  ["sbenchd","Smith machine decline press","lift",["chest","triceps"],["smith","bench"],"gym",["Decline bench, bar lands on your lower chest. Lower under control, press up.","Targets the lower chest.","Set the safety stops; get in and out of the decline bench slowly."],["bench","bar"]],
+  ["sdl","Smith machine deadlift","lift",["hamstrings","glutes","back"],["smith"],"gym",["Bar over your mid-foot. Hinge, grip just outside your legs, flat back. Stand up by pushing the floor away, lower with control.","The guided path helps you groove the hinge.","Brace hard and keep your back flat; go lighter than you think. Stop the set if your lower back rounds."],["trapdl","bar"]],
+  // Plate-loaded machines
+  ["pbenchw","Plate-loaded chest press (wide grip)","lift",["chest","triceps"],["plate"],"gym",["Seat so the handles line up with mid-chest; use the wide handles. Press out, return slowly to a stretch.","Wide handles put more on the chest.","Shoulder blades stay back on the pad."],["chestpress"]],
+  ["pbenchn","Plate-loaded chest press (narrow grip)","lift",["chest","triceps"],["plate"],"gym",["Same machine, narrow handles. Press out, return slowly.","Narrow handles shift more work to the triceps.","Elbows tucked about 45°."],["chestpress"]],
+  ["pinclinew","Plate-loaded incline press (wide grip)","lift",["chest","shoulders"],["plate"],"gym",["Seat so the handles line up with your upper chest; wide handles. Press up and out, return slowly.","Upper-chest focus.","Shoulder blades back; don't shrug."],["chestpress"]],
+  ["pinclinen","Plate-loaded incline press (narrow grip)","lift",["chest","triceps"],["plate"],"gym",["Same machine, narrow handles. Press, return slowly.","More triceps and front delt.","Elbows tucked."],["chestpress"]],
+  ["pshpw","Plate-loaded shoulder press (wide grip)","lift",["shoulders","triceps"],["plate"],"gym",["Seat so the handles start at shoulder height; wide handles. Press overhead, lower slowly.","Wide grip brings in more side delt.","Back on the pad, ribs down."],["mshpress"]],
+  ["pshpn","Plate-loaded shoulder press (narrow grip)","lift",["shoulders","triceps"],["plate"],"gym",["Same machine, narrow handles. Press overhead, lower slowly.","Narrow grip adds triceps.","Back on the pad; don't arch."],["mshpress"]],
+  ["plegcurl","Plate-loaded lying leg curl","lift",["hamstrings"],["plate"],"gym",["Lie face down, pad just above your heels. Curl your heels toward your glutes, pause, lower slowly.","Toes pulled toward your shins; get the full stretch at the bottom.","Hips stay down on the pad."],["legcurl"]],
+  ["pcalf","Plate-loaded standing calf raise","lift",["calves"],["plate"],"gym",["Shoulders under the pads, balls of your feet on the edge. Lower your heels fully, pause 2 seconds, rise all the way.","The bottom pause is what grows calves.","Weight through the big toe, not rolling outward; go easy if the outer left heel hurts."],["calf"]],
+  // Kettlebell, bodyweight, cardio
+  ["kbgoblet","Kettlebell goblet squat","lift",["quads","glutes","core"],["kb"],"gym",["Hold the kettlebell by the horns at your chest, elbows down. Squat between your knees, stand up.","Same as the dumbbell goblet squat; the bell sits a little easier against the chest.","Chest tall; don't let the bell pull you forward."],["goblet"]],
+  ["benchdip","Triceps bench dip","bw",["triceps","chest"],["bw","bench"],"both",["Hands on the edge of a bench or chair behind you, legs out in front. Lower until your elbows are about 90°, press back up.","Bend your knees to make it easier, straighten them (or put feet up) to make it harder.","Stop at 90°; going deeper strains the front of the shoulder. Skip it if your shoulders ache."],null],
+  ["stairs","Stair climber (StairMaster)","min",["cardio","glutes","calves"],["cardio"],"gym",["Steady pace, stand tall, light hand on the rails for balance only.","Burns a lot of calories and works the glutes.","Step with your whole foot. If your left heel complains, slow the pace or switch to the bike."],null],
+  ["rower","Rowing machine","min",["cardio","back"],["cardio"],"gym",["Push with your legs first, then lean back slightly, then pull the handle to your lower ribs. Reverse that order to return.","Full-body cardio that's easy on the joints.","Keep your back straight; the legs do most of the work."],null]
+];
+GYM_LIB.forEach(([k, n, kind, m, eq, where, form, anim]) => {
+  EX[k] = {n, k:kind, m, eq}; MUSCLE[k] = m.map(x => LIB_NAME[x] || x).join(" · "); FORM[k] = form;
+  if (where === "gym" && !GYM_ONLY.includes(k)) GYM_ONLY.push(k);
+  if (anim) ANIM_OF[k] = anim.length > 1 ? anim : anim[0];
+});
+["ctwist","ctwistd","cside","mrot"].forEach(k => CORE_KEYS.push(k));
+
 /* ---------- your own exercises ---------- */
 const CXK = "leancut-custom";
 let customEx = (() => { try { return JSON.parse(localStorage.getItem(CXK) || "{}") || {}; } catch(e){ return {}; } })();
