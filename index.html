@@ -258,6 +258,11 @@ textarea{resize:vertical;line-height:1.4}
 .edgrp button{padding:4px 12px;font-size:16px}
 .edgrp b{min-width:18px;text-align:center}
 .etgt{width:110px;padding:6px 8px;font-size:16px}
+.setctl{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:6px}
+.setctl > :first-child{justify-self:start}
+.setctl > :last-child{justify-self:end}
+.setctl button:disabled{opacity:.35}
+.ex-foot.chg{border-top:1px solid var(--line);margin-top:6px;padding-top:4px}
 .keepbar{display:flex;align-items:center;gap:8px;margin-top:6px}
 .keepbar button{padding:4px 10px;font-size:13px}
 #addExBtn{width:100%}
@@ -1263,12 +1268,15 @@ function exCard(it){
       <div class="last">${last ? `Last (${fDate(last.date)}): <b class="num">${esc(setsText(k,last.sets))}</b>` : "No history yet"}${prevBest[k] ? ` · Record: <b class="num">${esc(scoreText(k, prevBest[k]))}</b>` : ""}</div>
       ${last && last.note ? `<p class="lastnote">📝 Last time: <b>${esc(last.note)}</b></p>` : ""}
       <div class="sets ${u.length===1?"one":""} ${CD_KINDS.includes(e.k)?"cd":""}">${rows}</div>
+      ${L ? "" : `<div class="setctl"><button type="button" class="ghost" data-rm="${k}"${draft[k].length > 1 ? "" : " disabled"} aria-label="Remove a set">− Set</button>${last ? `<button type="button" class="ghost" data-copy="${k}">Copy last</button>` : "<span></span>"}<button type="button" class="ghost" data-add="${k}" aria-label="Add a set">+ Set</button></div>`}
       ${L ? (notes[k] ? `<p class="exnote-ro">📝 ${esc(notes[k])}</p>` : "") : (notes[k] || noteOpen.has(k)) ? `<textarea class="exnote" data-note="${k}" rows="2" placeholder="Note: how it felt, why you stopped, what to change…" aria-label="Note for ${esc(e.n)}">${esc(notes[k] || "")}</textarea>` : ""}
-      ${!L && !it[4] && draft[k].length !== n && plan().x.some(r => r[0] === k) ? `<div class="keepbar"><span class="sub">${draft[k].length} sets today (routine: ${n}).</span><button type="button" class="ghost" data-keepsets="${k}" data-n="${draft[k].length}">📌 Keep ${draft[k].length} sets every ${DAYS[curDay].t}</button></div>` : ""}
       ${!L && rnoteOf(base) ? `<p class="lastnote">📌 ${esc(rnoteOf(base))}</p>` : ""}
-      ${!L && it[4] && swaps[it[4]] ? `<div class="keepbar"><span class="sub">Like it better?</span><button type="button" class="ghost" data-keep="${it[4]}">📌 Keep it every ${DAYS[curDay].t}</button></div>` : ""}
+      ${L ? "" : (() => { const sw = !canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`;
+        const kSwap = it[4] && swaps[it[4]] ? `<button type="button" class="ghost" data-keep="${it[4]}">📌 Keep this swap every ${DAYS[curDay].t}</button>` : "";
+        const kSets = !it[4] && draft[k].length !== n && plan().x.some(r => r[0] === k) ? `<button type="button" class="ghost" data-keepsets="${k}" data-n="${draft[k].length}">📌 Keep ${draft[k].length} sets every ${DAYS[curDay].t}</button>` : "";
+        return sw || kSwap || kSets ? `<div class="ex-foot chg">${sw}${kSwap}${kSets}</div>` : ""; })()}
       ${L ? "" : swapHtml}
-      ${L ? "" : `<div class="ex-foot">${!canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`}${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}<button type="button" class="ghost" data-all="${k}">${allDone ? "Undo complete" : "✓ Complete all sets"}</button>${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}<button type="button" class="ghost" data-add="${k}">+ Set</button>${draft[k].length>1?`<button type="button" class="ghost" data-rm="${k}">− Set</button>`:""}${last?`<button type="button" class="ghost" data-copy="${k}">Copy last</button>`:""}</div>`}
+      ${L ? "" : `<div class="ex-foot">${!isOpt(it) && !allDone && base !== "heelwarm" ? `<button type="button" class="ghost" data-later="${base}">${isLater(it) ? "↑ Move back" : "↓ Do later"}</button>` : ""}${notes[k] || noteOpen.has(k) ? "" : `<button type="button" class="ghost" data-noteadd="${k}">✎ Note</button>`}</div>`}
     </div>`;
 }
 let addAs = "main";
