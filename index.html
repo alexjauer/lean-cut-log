@@ -451,7 +451,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <p class="sub" id="dayDesc" style="margin:10px 0 0"></p>
       <div class="locpick" id="locPick" role="group" aria-label="Where you're training" hidden></div>
       <button type="button" class="primary" id="timerTop" style="margin-top:10px;width:100%">▶ Start workout</button>
-      <div class="fbrow"><span class="label">When you check a set</span><button type="button" id="fbSound"></button><button type="button" id="fbBuzz"></button></div>
+      <div class="fbrow"><span class="label">Feedback</span><button type="button" id="fbSound"></button><button type="button" id="fbBuzz"></button><button type="button" id="fbAwake"></button></div>
     </div>
     <div class="panel" id="exList"></div>
     <div class="panel" id="routineBox">
@@ -1727,6 +1727,7 @@ function timerFinish(){
   $("#saveBtn").scrollIntoView({block:"center", behavior:"smooth"});
 }
 function renderTimer(){
+  wakeSync();
   const tm = timerGet(), active = !!tm, here = active && tm.date === curDate;
   const isToday = curDate === today();
   $("#timerTop").hidden = (active && !here) || wkLocked() || mode === "edit" || (mode === "run" && !isToday && !here);
@@ -1926,12 +1927,20 @@ function cdSeconds(k, i){
   const v = num(r[0]) || (h ? num(h[0]) : null) || tn || (kind === "min" ? 10 : 30);
   return kind === "min" ? v * 60 : v;
 }
-async function cdWake(on){
+// Keep the screen on while a countdown runs, and (if turned on) for the whole workout, so sounds and taps can fire.
+// iPhones pause a web app when the screen locks or you switch apps, so an awake screen is the only reliable way.
+let wakeBusy = false;
+async function wakeSync(){
+  const tm = timerGet();
+  const want = !document.hidden && ((cd.k != null && cd.pausedLeft == null) || (FB.awake && tm && !tm.pausedAt && tm.date === today()));
+  if (wakeBusy) return; wakeBusy = true;
   try {
-    if (on && !cd.wake && navigator.wakeLock) cd.wake = await navigator.wakeLock.request("screen");
-    if (!on && cd.wake) { await cd.wake.release(); cd.wake = null; }
+    if (want && !cd.wake && navigator.wakeLock) { cd.wake = await navigator.wakeLock.request("screen"); cd.wake.addEventListener("release", () => { cd.wake = null; }); }
+    if (!want && cd.wake) { const w = cd.wake; cd.wake = null; await w.release(); }
   } catch(e){ cd.wake = null; }
+  wakeBusy = false;
 }
+const cdWake = () => wakeSync();
 function cdStart(k, i){
   const secs = cdSeconds(k, i);
   Object.assign(cd, {k, i, total:secs, end:Date.now() + secs*1000, pausedLeft:null});
@@ -1969,7 +1978,7 @@ $("#cdPause").addEventListener("click", () => { if (cd.pausedLeft != null) { cd.
 const cdInc = () => cd.k === "_rest" ? 15 : EX[cd.k] && EX[cd.k].k === "min" ? 30 : 10;
 $("#cdPlus").addEventListener("click", () => { const n = cdInc(); if (cd.pausedLeft != null) cd.pausedLeft += n*1000; else cd.end += n*1000; cd.total += n; renderCd(); });
 $("#cdCancel").addEventListener("click", cdStop);
-document.addEventListener("visibilitychange", () => { if (!document.hidden && cd.k != null) { if (cd.pausedLeft == null) cdWake(true); renderCd(); } });
+document.addEventListener("visibilitychange", () => { wakeSync(); if (!document.hidden && cd.k != null) renderCd(); });
 setInterval(() => { if (timerGet()) renderTimer(); if (cd.k != null) renderCd(); }, 250);
 $("#dur").addEventListener("input", () => { markDirty(); });
 $("#wnote").addEventListener("input", () => { wnote = $("#wnote").value; markDirty(); });
@@ -2739,14 +2748,17 @@ $("#bkImport").addEventListener("change", async e => {
 
 
 /* ---------- set feedback: haptic tap + short sound ---------- */
-const FB = (() => { const v = {sound:true, buzz:true, rest:0}; try { Object.assign(v, JSON.parse(localStorage.getItem("leancut-fb") || "{}")); } catch(e){} return v; })();
+const FB = (() => { const v = {sound:true, buzz:true, rest:0, awake:true}; try { Object.assign(v, JSON.parse(localStorage.getItem("leancut-fb") || "{}")); } catch(e){} return v; })();
 function renderFb(){
   $("#fbSound").textContent = "Sound " + (FB.sound ? "on" : "off"); $("#fbSound").setAttribute("aria-pressed", FB.sound);
   $("#fbBuzz").textContent = "Vibrate " + (FB.buzz ? "on" : "off"); $("#fbBuzz").setAttribute("aria-pressed", FB.buzz);
+  $("#fbAwake").textContent = "Screen awake " + (FB.awake ? "on" : "off"); $("#fbAwake").setAttribute("aria-pressed", FB.awake);
+  $("#fbAwake").title = "Keeps the screen from locking while a workout timer runs, so sounds and taps keep working";
 }
 function fbToggle(k){ FB[k] = !FB[k]; try { localStorage.setItem("leancut-fb", JSON.stringify(FB)); } catch(e){} renderFb(); if (FB[k]) feedback(false); }
 $("#fbSound").addEventListener("click", () => fbToggle("sound"));
 $("#fbBuzz").addEventListener("click", () => fbToggle("buzz"));
+$("#fbAwake").addEventListener("click", () => { fbToggle("awake"); wakeSync(); });
 let actx = null;
 // iOS leaves an audio context "interrupted" after the phone locks or the app goes to the background, and it never plays again.
 // Close it when the app is hidden and make a fresh one on the next tap.
