@@ -272,6 +272,8 @@ textarea{resize:vertical;line-height:1.4}
 #routineNote{margin:10px 0 0}
 #routineNote button{padding:4px 10px;font-size:13px;margin-left:6px}
 .libgrp h3{margin:16px 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.libeq{margin-top:10px}
+.libeq button{padding:5px 10px;font-size:13px}
 .librow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .librow .lt{flex:1;min-width:0}
 .librow .lt b{display:block;font-weight:500}
@@ -469,6 +471,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <details id="libBox"><summary><h2 style="display:inline">Exercise collection</h2> <span class="sub" id="libCount"></span></summary>
         <p class="sub" style="margin:8px 0">Turn off anything you don't want suggested. Removed exercises never show up in swaps, and if one is in a workout, the closest same-muscle exercise takes its place the next time you open that day. Your history is kept.</p>
         <div class="field"><label class="label" for="libQ">Search</label><input type="search" id="libQ" placeholder="curl, glutes, band…"></div>
+        <div class="locpick libeq" id="libEq" role="group" aria-label="Filter by equipment"></div>
         <div id="libList"></div>
       </details>
     </div>
@@ -725,6 +728,26 @@ const MUSCLE_ALSO = { // secondary muscles, for filtering and reference
   bridge:["hamstrings","core"], sbridge:["hamstrings","core"], suitcase:["glutes"], shrug:["forearms"], cgbench:["chest"], floorpress:["chest"], tridip:["chest"]
 };
 Object.entries(MUSCLE_TAGS).forEach(([m, ks]) => ks.forEach(k => { if (EX[k]) EX[k].m = [m, ...(MUSCLE_ALSO[k] || [])]; }));
+// Equipment each exercise uses, main piece first.
+const EQ_NAME = {db:"Dumbbell", bb:"Barbell", ez:"EZ bar", trap:"Trap bar", smith:"Smith machine", mach:"Machine", cable:"Cable", band:"Resistance band", loop:"Loop band", door:"Door anchor", kb:"Kettlebell", plate:"Weight plate", bw:"Bodyweight", bench:"Bench", bar:"Pull-up bar / station", wheel:"Ab wheel", handles:"Push-up handles", ankle:"Ankle weights", cardio:"Cardio machine", step:"Step / box", none:"No equipment"};
+const EQUIP_TAGS = {
+  db:["goblet","dbrdl","row1","dbcurl","ohdb","shpress","csrow","inccurl","dbbench","hammer","bss","latraise","revfly","dbfloor","dbskull","lunge","incpress","dbfly","bentrow2","xhammer","frontraise","revlunge","reversecurl","conccurl","rconccurl","waiter","wristcurl","rwristcurl","shrug","suitcase","ohext1","kickback","circuit"],
+  bb:["squat","cgbench","hipthrust"], ez:["ezcurl","skull","preacher"], trap:["trapdl"], smith:["smithsq"],
+  mach:["legpress","chestpress","mshpress","legcurl","abcrunch","machcurl","tridip","machlat","revdeck","pecdeck","machrow","hacksq","legext","calfpress","hipabd","calfse"],
+  cable:["ohcable","cablecr","facepull","pushdown","cablerow","pulldown","pallofc","cablecurl","ropehammer","cablelat","cablekick"],
+  door:["dface","dpushdown","dpulldown","drow","dohext","pallof","bcrunch","bchop","brot","bfly"],
+  band:["bandankle","bandevert","bpullapart","bcurl","bhammer","bfront","blat","bohp","bkick"], loop:["bandabd","bandwalk","clamshell"],
+  bw:["pushup","deadbug","plank","sideplank","birddog","revcrunch","sbridge","bridge","calfst","heelwarm","calfstretch","anklealpha","shortfoot","balance","tibraise","chintuck","mobility","floorpress"],
+  bar:["pullup","kneeraise","captain"], wheel:["abwheel"], cardio:["incwalk","run","intervals","bike"], none:["walk","steps"], bench:["backext"]
+};
+const EQUIP_ALSO = {
+  shpress:["bench"], csrow:["bench"], inccurl:["bench"], dbbench:["bench"], bss:["bench"], incpress:["bench"], dbfly:["bench"], conccurl:["bench"], rconccurl:["bench"], kickback:["bench"], dbskull:["bench"],
+  cgbench:["bench"], hipthrust:["bench","plate"], skull:["bench"], preacher:["bench","db"], pullup:["mach"], squat:["plate"], trapdl:["plate"], smithsq:["plate"],
+  pushup:["handles"], deadbug:["ankle"], birddog:["ankle"], revcrunch:["ankle"], bridge:["db","loop"], sbridge:["db"], calfst:["db","step"], floorpress:["db"],
+  heelwarm:["band"], dface:["band"], dpushdown:["band"], dpulldown:["band"], drow:["band"], dohext:["band"], pallof:["band"], bcrunch:["band"], bchop:["band"], brot:["band"], bfly:["band"], circuit:["bw"]
+};
+Object.entries(EQUIP_TAGS).forEach(([q, ks]) => ks.forEach(k => { if (EX[k]) EX[k].eq = [q, ...(EQUIP_ALSO[k] || [])]; }));
+const eqText = k => (EX[k].eq || []).map(q => EQ_NAME[q]).join(" + ");
 const MUSCLE_NAME = {quads:"quads", hamstrings:"hamstrings", glutes:"glutes", chest:"chest", back:"back", shoulders:"shoulders", sidedelts:"side-delt", reardelts:"rear-delt", biceps:"biceps", triceps:"triceps", calves:"calf", core:"core", cardio:"cardio", forearms:"forearm", traps:"trap"};
 const NO_SWAP = ["rehab","daily"];
 // Swap options when equipment is taken, in order of preference (filtered to the same main muscle).
@@ -1252,7 +1275,7 @@ function exInput(k, i, j, v, lock){
 function exCard(it){
   const [k,n,target] = it, e = EX[k], u = KUNIT[e.k], last = lastFor(k, curDate), up = upInfo(k, n, target), pair = pairOf(it);
   const base = it[4] || k, choices = swapChoices(it) || [], canSwap = swapChoices(it) !== null, prim = (EX[base].m || [])[0];
-  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
+  const swapHtml = swapOpen === base && choices.length ? `<div class="swapbox"><span class="label">Equipment taken? Another ${esc(MUSCLE_NAME[prim] || "")} exercise</span>${choices.map(a => `<button type="button" data-pick="${base}" data-alt="${a}"><b>${a === base ? "Back to " : ""}${esc(EX[a].n)}</b><span class="sub">${esc(MUSCLE[a] || "")} · ${esc(EQ_NAME[(EX[a].eq || [])[0]] || "")} · ${WHERE_TXT[whereOf(a)]}</span></button>`).join("")}<p class="sub">It's logged under the new exercise, so its records stay separate.</p></div>` : "";
   const allDone = done[k].length > 0 && done[k].every(Boolean);
   const anyPR = draft[k].some((r,i) => isPR(k, i));
   const L = wkLocked();
@@ -1283,9 +1306,9 @@ let addAs = "main";
 function renderAddList(){
   const q = ($("#addQ").value || "").trim().toLowerCase(), loc = plan().loc, inToday = new Set(items().map(x => x[0]));
   const ks = Object.keys(EX).filter(k => !hidden.has(k) && !inToday.has(k) && locOK(k, loc) && EX[k].m && !NO_SWAP.includes(EX[k].m[0]) && !(loc === "home" && tooHeavyHome(k)) &&
-    (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + EX[k].m.join(" ")).toLowerCase().includes(q)));
+    (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + EX[k].m.join(" ") + " " + eqText(k)).toLowerCase().includes(q)));
   ks.sort((a,b) => LIB_ORDER.indexOf(EX[a].m[0]) - LIB_ORDER.indexOf(EX[b].m[0]) || EX[a].n.localeCompare(EX[b].n));
-  $("#addList").innerHTML = ks.slice(0, 60).map(k => `<button type="button" data-addex="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || LIB_NAME[EX[k].m[0]])} · ${WHERE_TXT[whereOf(k)]}</span></button>`).join("") || `<p class="empty">Nothing matches.</p>`;
+  $("#addList").innerHTML = ks.slice(0, 60).map(k => `<button type="button" data-addex="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || LIB_NAME[EX[k].m[0]])} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}</span></button>`).join("") || `<p class="empty">Nothing matches.</p>`;
 }
 function renderRoutineNote(){
   const p = plan(), box = $("#routineBox"), rest = p.loc === "rest";
@@ -2909,18 +2932,22 @@ document.addEventListener("toggle", e => { if (e.target.open && !animRaf && !red
 const LIB_ORDER = ["biceps","triceps","core","glutes","quads","hamstrings","chest","back","shoulders","sidedelts","reardelts","forearms","traps","calves","cardio","rehab","daily"];
 const LIB_NAME = {biceps:"Biceps", triceps:"Triceps", core:"Core", glutes:"Glutes", quads:"Quads", hamstrings:"Hamstrings", chest:"Chest", back:"Back", shoulders:"Shoulders", sidedelts:"Side delts", reardelts:"Rear delts", forearms:"Forearms", traps:"Traps", calves:"Calves", cardio:"Cardio", rehab:"Heel rehab + mobility", daily:"Daily"};
 function inAnyPlan(k){ return Object.values(DAYS).some(D => [D, D.alt].filter(Boolean).some(p => p.x.some(it => it[0] === k))); }
+let libEq = "";
 function renderLib(){
-  const q = ($("#libQ").value || "").trim().toLowerCase(), keys = Object.keys(EX);
-  $("#libCount").textContent = `${keys.length - [...hidden].filter(k => EX[k]).length} of ${keys.length} on`;
+  const q = ($("#libQ").value || "").trim().toLowerCase(), all = Object.keys(EX), keys = all.filter(k => !libEq || (EX[k].eq || []).includes(libEq));
+  const used = Object.keys(EQ_NAME).filter(qq => all.some(k => (EX[k].eq || [])[0] === qq));
+  $("#libEq").innerHTML = `<span class="label">Equipment</span><button type="button" data-leq="" aria-pressed="${!libEq}">All</button>` + used.map(qq => `<button type="button" data-leq="${qq}" aria-pressed="${libEq === qq}">${EQ_NAME[qq]}</button>`).join("");
+  $("#libCount").textContent = `${all.length - [...hidden].filter(k => EX[k]).length} of ${all.length} on`;
   $("#libList").innerHTML = LIB_ORDER.map(g => {
-    const ks = keys.filter(k => EX[k].m && EX[k].m[0] === g && (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + g + " " + WHERE_TXT[whereOf(k)]).toLowerCase().includes(q)))
+    const ks = keys.filter(k => EX[k].m && EX[k].m[0] === g && (!q || (EX[k].n + " " + (MUSCLE[k] || "") + " " + g + " " + WHERE_TXT[whereOf(k)] + " " + eqText(k)).toLowerCase().includes(q)))
       .sort((a,b) => EX[a].n.localeCompare(EX[b].n));
     if (!ks.length) return "";
     return `<div class="libgrp"><h3>${LIB_NAME[g]}</h3>${ks.map(k => { const off = hidden.has(k);
-      return `<div class="librow ${off ? "off" : ""}"><div class="lt"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${WHERE_TXT[whereOf(k)]}${inAnyPlan(k) ? " · in your plan" : ""}</span></div><button type="button" data-lib="${k}" aria-pressed="${!off}" aria-label="${esc(EX[k].n)}: ${off ? "removed, tap to add back" : "on, tap to remove"}">${off ? "Add back" : "✓ On"}</button></div>`; }).join("")}</div>`;
+      return `<div class="librow ${off ? "off" : ""}"><div class="lt"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}${inAnyPlan(k) ? " · in your plan" : ""}</span></div><button type="button" data-lib="${k}" aria-pressed="${!off}" aria-label="${esc(EX[k].n)}: ${off ? "removed, tap to add back" : "on, tap to remove"}">${off ? "Add back" : "✓ On"}</button></div>`; }).join("")}</div>`;
   }).join("") || `<p class="empty">No exercises match.</p>`;
 }
 $("#libQ").addEventListener("input", renderLib);
+$("#libEq").addEventListener("click", e => { const b = e.target.closest("[data-leq]"); if (!b) return; libEq = b.dataset.leq; renderLib(); });
 $("#libList").addEventListener("click", e => {
   const b = e.target.closest("[data-lib]"); if (!b) return;
   const k = b.dataset.lib; hidden.has(k) ? hidden.delete(k) : hidden.add(k); hiddenSave(); buzz(false); renderLib();
