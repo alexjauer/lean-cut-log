@@ -2724,11 +2724,11 @@ function renderMeasures(){
     </div>`;
 }
 /* ---------- tap-the-body measurement entry ---------- */
-// [key, label, x1, x2, y, label side]; the figure faces you, so your right side is on the left of the drawing.
+// [key, label, x1, x2, y, label side]; drawn like a mirror: your left side is on the left of the screen.
 // Side "c" = label sits inside the body, above the band. "Next" walks them in a sensible order (waist first).
 const MPOS = [["waist","Waist",86,154,168,"c"],["neck","Neck",110,130,62,"r"],["hips","Hips",80,160,208,"c"],["chest","Chest",76,164,112,"c"],["shoulders","Shoulders",64,176,88,"c"],
-  ["armR","R arm",40,62,126,"l"],["armL","L arm",178,200,126,"r"],["foreR","R forearm",32,52,180,"l"],["foreL","L forearm",188,208,180,"r"],
-  ["thigh","R thigh",86,118,252,"l"],["thighL","L thigh",122,154,252,"r"],["calfR","R calf",89,111,330,"l"],["calfL","L calf",129,151,330,"r"]];
+  ["armL","L arm",40,62,126,"l"],["armR","R arm",178,200,126,"r"],["foreL","L forearm",32,52,180,"l"],["foreR","R forearm",188,208,180,"r"],
+  ["thighL","L thigh",86,118,252,"l"],["thigh","R thigh",122,154,252,"r"],["calfL","L calf",89,111,330,"l"],["calfR","R calf",129,151,330,"r"]];
 const MHOW = {neck:"Just below the Adam's apple, tape angled slightly down toward the front, head level and relaxed.", shoulders:"Full loop around the widest part: over both shoulder muscles in front and across the back, arms hanging relaxed. A mirror helps keep it level behind you.",
   chest:"Around the nipple line and under the armpits, arms relaxed, after a normal breath out.", armR:"Flexed: bend the elbow, make a fist and squeeze, then measure the biggest part.", armL:"Flexed: bend the elbow, make a fist and squeeze, then measure the biggest part.",
   waist:"Around the belly button, standing relaxed, after breathing out normally. Don't suck in.", foreR:"Arm hanging straight, hand open and relaxed, thickest part just below the elbow.", foreL:"Arm hanging straight, hand open and relaxed, thickest part just below the elbow.",
@@ -2741,7 +2741,7 @@ function renderMDiag(){
   const limb = d => `<path class="limb o" d="${d}"/><path class="limb i" d="${d}"/>`;
   const fig = limb("M64 86 L50 132 L42 200") + limb("M176 86 L190 132 L198 200") + limb("M102 214 L100 290 L100 378") + limb("M138 214 L140 290 L140 378") +
     `<path class="bodyo" d="M108 60 L108 70 Q86 72 66 80 Q60 84 62 94 L70 118 Q76 140 86 170 Q78 190 78 212 L162 212 Q162 190 154 170 Q164 140 170 118 L178 94 Q180 84 174 80 Q154 72 132 70 L132 60 Z"/>` +
-    `<circle class="bodyo" cx="120" cy="38" r="20"/><text class="side" x="0" y="20">YOUR RIGHT</text><text class="side" x="240" y="20" text-anchor="end">YOUR LEFT</text>`;
+    `<circle class="bodyo" cx="120" cy="38" r="20"/><text class="side" x="0" y="20">YOUR LEFT</text><text class="side" x="240" y="20" text-anchor="end">YOUR RIGHT</text>`;
   const spots = MPOS.map(([k, lab, x1, x2, y, side]) => {
     const v = num(($("#m-" + k) || {}).value), last = mLast(k), has = v != null, cx = (x1 + x2) / 2;
     const tx = side === "l" ? x1 - 6 : side === "c" ? cx : x2 + 6, anchor = side === "l" ? "end" : side === "c" ? "middle" : "start";
@@ -3420,7 +3420,7 @@ renderTimer();
 </script>
 
 <script>
-window.APP_V = 65; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
+window.APP_V = 66; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
 // Check for a new version whenever the app comes back to the screen; reload into it once it's ready
 // (but never in the middle of the one-at-a-time workout view).
 if ("serviceWorker" in navigator) addEventListener("load", () => {
