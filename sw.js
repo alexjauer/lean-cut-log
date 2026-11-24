@@ -1,8 +1,9 @@
 // Lean Cut Log service worker: makes the app open offline.
 // When you upload a new index.html, bump this version so phones pick up the change.
-const CACHE = "leancut-v60";
+const CACHE = "leancut-v61";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
-self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
+// Always ask GitHub for a fresh copy (its pages can otherwise be served from a 10-minute cache).
+self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, {cache:"no-cache"})))).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
@@ -11,7 +12,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if (req.mode === "navigate") {
     // Network first so updates show up; fall back to the saved copy offline.
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put("./index.html", copy)); return r; })
+    e.respondWith(fetch(req.url, {cache:"no-cache", credentials:"same-origin"}).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put("./index.html", copy)); return r; })
       .catch(() => caches.match("./index.html")));
     return;
   }
