@@ -182,6 +182,31 @@ body.focusing.withbar .focus{padding-bottom:calc(64px + env(safe-area-inset-bott
 .timebox{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
 .timebox .field{flex:1 1 160px}
 #timerBtn.running,#timerTop.running{color:var(--good);border-color:var(--good)}
+.mdiag{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+#mSvg{width:100%;max-width:340px;align-self:center;touch-action:manipulation}
+#mSvg .bodyo{fill:var(--surface);stroke:var(--muted);stroke-width:1.4;stroke-linejoin:round}
+#mSvg .limb{fill:none;stroke-linecap:round;stroke-linejoin:round}
+#mSvg .limb.o{stroke:var(--muted);stroke-width:21}
+#mSvg .limb.i{stroke:var(--surface);stroke-width:18}
+#mSvg .band{stroke:var(--accent);stroke-width:2;stroke-dasharray:3 2;opacity:.55}
+#mSvg .hit{fill:transparent;cursor:pointer}
+#mSvg .mk{fill:var(--surface);stroke:var(--accent);stroke-width:1.6}
+#mSvg .mt{font:600 9px var(--f-body);fill:var(--muted)}
+#mSvg .mv{font:700 10px var(--f-num);fill:var(--fg)}
+#mSvg .mv.last{fill:var(--muted);font-weight:400}
+#mSvg g.on .band{opacity:1;stroke-dasharray:none;stroke-width:3}
+#mSvg g.on .mk{fill:var(--accent)}
+#mSvg g.has .mk{fill:var(--good);stroke:var(--good)}
+#mSvg g.has .mv{fill:var(--good)}
+#mSvg .side{font:700 10px var(--f-body);fill:var(--muted);opacity:.7}
+.medit{border:1px solid var(--accent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.medit .mehead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.medit .mehead b{font-size:16px}
+.medit p{margin:0;font-size:13px}
+.merow{display:flex;gap:6px;align-items:stretch}
+.merow input{flex:1;min-width:0;text-align:center;font-size:18px;font-family:var(--f-num)}
+.merow button{flex:none;min-width:44px;font-size:18px}
+.merow #meNext{font-size:14px}
 .mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .mgrid .field:first-child{grid-column:1/-1}
 .up{color:var(--good)} .down{color:var(--plate)} .flat{color:var(--muted)}
@@ -543,9 +568,13 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
     <div class="panel" id="wBody"></div>
     <div class="panel">
       <h2>Measurements</h2>
-      <p class="sub" style="margin:4px 0 12px">Every 2 weeks, first thing in the morning before eating. Tape flat on the skin and level, snug but not pressing in. Fill in whichever you measured.</p>
-      <div class="mgrid">
-        <div class="field"><label class="label" for="mDate">Date</label><input type="date" id="mDate"></div>
+      <p class="sub" style="margin:4px 0 12px">Every 2 weeks, first thing in the morning before eating. Tap a spot on the body, enter the number, then tap <b>Log measurements</b> to save everything you filled in.</p>
+      <div class="field" style="max-width:220px"><label class="label" for="mDate">Date</label><input type="date" id="mDate"></div>
+      <div class="mdiag">
+        <svg id="mSvg" viewBox="-24 0 288 400" role="group" aria-label="Body diagram: tap a spot to measure"></svg>
+        <div class="medit" id="mEdit"></div>
+      </div>
+      <div class="mgrid" hidden>
         <div class="field"><label class="label" for="m-waist">Waist at navel</label><input type="number" inputmode="decimal" step="0.25" id="m-waist" placeholder="in"></div>
         <div class="field"><label class="label" for="m-hips">Hips (glutes)</label><input type="number" inputmode="decimal" step="0.25" id="m-hips" placeholder="in"></div>
         <div class="field"><label class="label" for="m-chest">Chest</label><input type="number" inputmode="decimal" step="0.25" id="m-chest" placeholder="in"></div>
@@ -560,7 +589,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
         <div class="field"><label class="label" for="m-calfR">Right calf</label><input type="number" inputmode="decimal" step="0.25" id="m-calfR" placeholder="in"></div>
         <div class="field"><label class="label" for="m-calfL">Left calf</label><input type="number" inputmode="decimal" step="0.25" id="m-calfL" placeholder="in"></div>
       </div>
-      <div class="savebar" style="margin-top:12px"><button class="primary" id="mSave">Log measurements</button><span class="toast" id="mToast" role="status"></span></div>
+      <div class="savebar" style="margin-top:12px"><button class="primary" id="mSave">Log measurements</button><button type="button" class="ghost" id="mClear" hidden>Clear</button><span class="toast" id="mToast" role="status"></span></div>
       <details class="fn" style="margin-top:12px"><summary><span class="label">Where to measure</span><span class="i">Show</span></summary>
         <dl class="form"><dt>Tape</dt><dd>Flat against the skin and level all the way around, snug enough not to slip but not denting the skin. Measure twice; if they differ, take the average. A mirror helps you keep it level.</dd><dt>Flexed or relaxed</dt><dd>Everything relaxed except the arms. What matters most is doing it the same way every time.</dd><dt>Waist</dt><dd>Around the belly button, standing relaxed, after breathing out normally. Don't suck in.</dd><dt>Chest</dt><dd>Around the nipple line and under the armpits, arms relaxed at your sides, after a normal breath out.</dd><dt>Shoulders</dt><dd>A full loop around the widest part of the shoulders: over the outside bulge of both shoulder muscles in front and across the back, a few inches below the top of the shoulders. Stand tall, arms hanging relaxed. Easiest with a helper; alone, use a mirror to keep the tape level across the back.</dd><dt>Arms</dt><dd>Flexed: bend the elbow, make a fist and squeeze the biceps, then measure around the biggest part. Both arms.</dd><dt>Hips (glutes)</dt><dd>Feet together, around the widest part of your butt, tape level all the way around. This is the one that shows glute growth.</dd><dt>Neck</dt><dd>Just below the Adam's apple, tape angled slightly down toward the front, head level and relaxed. Used with your waist to estimate body fat.</dd><dt>Forearms</dt><dd>Arm hanging straight, hand relaxed and open, around the thickest part just below the elbow.</dd><dt>Thighs</dt><dd>Standing, weight on both feet, muscles relaxed, halfway between the hip crease and the top of the kneecap. Both legs: the left leg can lose some size after a heel injury, so tracking both shows if they're evening out.</dd><dt>Calves</dt><dd>Relaxed, not flexed: standing tall with your weight on both feet evenly, around the widest part of the calf. Both legs, for the same reason as the thighs.</dd></dl>
       </details>
@@ -2661,6 +2690,7 @@ const navyBF = (waist, neck) => waist > neck ? 86.010 * Math.log10(waist - neck)
 let curMeas = "waist";
 function renderMeasures(){
   if (!$("#mDate").value) $("#mDate").value = today();
+  renderMDiag();
   const rows = Object.values(state.measures).sort((a,b) => a.date.localeCompare(b.date));
   if (!rows.length) {
     $("#mBody").innerHTML = `<h2>Measurement trend</h2><p class="empty">Log a first set of measurements to get a baseline. Waist coming down while arms hold or grow is the clearest sign you're losing fat and keeping muscle, even on weeks the scale barely moves.</p>`;
@@ -2693,13 +2723,65 @@ function renderMeasures(){
       <div class="tablebox"><table><thead><tr><th>Date</th><th>Logged</th><th></th></tr></thead><tbody>${hist}</tbody></table></div>
     </div>`;
 }
+/* ---------- tap-the-body measurement entry ---------- */
+// [key, label, x1, x2, y, label side]; the figure faces you, so your right side is on the left of the drawing.
+// Side "c" = label sits inside the body, above the band. "Next" walks them in a sensible order (waist first).
+const MPOS = [["waist","Waist",86,154,168,"c"],["neck","Neck",110,130,62,"r"],["hips","Hips",80,160,208,"c"],["chest","Chest",76,164,112,"c"],["shoulders","Shoulders",64,176,88,"c"],
+  ["armR","R arm",40,62,126,"l"],["armL","L arm",178,200,126,"r"],["foreR","R forearm",32,52,180,"l"],["foreL","L forearm",188,208,180,"r"],
+  ["thigh","R thigh",86,118,252,"l"],["thighL","L thigh",122,154,252,"r"],["calfR","R calf",89,111,330,"l"],["calfL","L calf",129,151,330,"r"]];
+const MHOW = {neck:"Just below the Adam's apple, tape angled slightly down toward the front, head level and relaxed.", shoulders:"Full loop around the widest part: over both shoulder muscles in front and across the back, arms hanging relaxed. A mirror helps keep it level behind you.",
+  chest:"Around the nipple line and under the armpits, arms relaxed, after a normal breath out.", armR:"Flexed: bend the elbow, make a fist and squeeze, then measure the biggest part.", armL:"Flexed: bend the elbow, make a fist and squeeze, then measure the biggest part.",
+  waist:"Around the belly button, standing relaxed, after breathing out normally. Don't suck in.", foreR:"Arm hanging straight, hand open and relaxed, thickest part just below the elbow.", foreL:"Arm hanging straight, hand open and relaxed, thickest part just below the elbow.",
+  hips:"Feet together, around the widest part of your butt, tape level all the way around.", thigh:"Standing, legs relaxed, halfway between the hip crease and the top of the kneecap.", thighL:"Standing, legs relaxed, halfway between the hip crease and the top of the kneecap.",
+  calfR:"Relaxed (not flexed), weight on both feet, around the widest part of the calf.", calfL:"Relaxed (not flexed), weight on both feet, around the widest part of the calf."};
+let mSel = "waist";
+const mLast = k => { const r = Object.values(state.measures).filter(x => num(x[k]) != null).sort((a,b) => b.date.localeCompare(a.date))[0]; return r ? {v:num(r[k]), d:r.date} : null; };
+function renderMDiag(){
+  const svg = $("#mSvg"); if (!svg) return;
+  const limb = d => `<path class="limb o" d="${d}"/><path class="limb i" d="${d}"/>`;
+  const fig = limb("M64 86 L50 132 L42 200") + limb("M176 86 L190 132 L198 200") + limb("M102 214 L100 290 L100 378") + limb("M138 214 L140 290 L140 378") +
+    `<path class="bodyo" d="M108 60 L108 70 Q86 72 66 80 Q60 84 62 94 L70 118 Q76 140 86 170 Q78 190 78 212 L162 212 Q162 190 154 170 Q164 140 170 118 L178 94 Q180 84 174 80 Q154 72 132 70 L132 60 Z"/>` +
+    `<circle class="bodyo" cx="120" cy="38" r="20"/><text class="side" x="0" y="20">YOUR RIGHT</text><text class="side" x="240" y="20" text-anchor="end">YOUR LEFT</text>`;
+  const spots = MPOS.map(([k, lab, x1, x2, y, side]) => {
+    const v = num(($("#m-" + k) || {}).value), last = mLast(k), has = v != null, cx = (x1 + x2) / 2;
+    const tx = side === "l" ? x1 - 6 : side === "c" ? cx : x2 + 6, anchor = side === "l" ? "end" : side === "c" ? "middle" : "start";
+    const shown = has ? fmt(v, 2) : last ? fmt(last.v, 2) : "";
+    if (side === "c") return `<g data-mk="${k}" class="${k === mSel ? "on" : ""} ${has ? "has" : ""}" role="button" tabindex="0" aria-label="${esc(lab)}${has ? ": " + v : ""}">
+      <line class="band" x1="${x1}" x2="${x2}" y1="${y}" y2="${y}"/><circle class="mk" cx="${cx}" cy="${y}" r="4"/>
+      <text class="mt" x="${cx}" y="${y - 6}" text-anchor="middle">${esc(lab)}${shown ? ` <tspan class="mv ${has ? "" : "last"}">${shown}</tspan>` : ""}</text>
+      <rect class="hit" x="${x1}" y="${y - 18}" width="${x2 - x1}" height="28"/></g>`;
+    const val = has ? `<text class="mv" x="${tx}" y="${y + 10}" text-anchor="${anchor}">${fmt(v, 2)}</text>` : last ? `<text class="mv last" x="${tx}" y="${y + 10}" text-anchor="${anchor}">${fmt(last.v, 2)}</text>` : "";
+    return `<g data-mk="${k}" class="${k === mSel ? "on" : ""} ${has ? "has" : ""}" role="button" tabindex="0" aria-label="${esc(lab)}${has ? ": " + v : ""}">
+      <line class="band" x1="${x1}" x2="${x2}" y1="${y}" y2="${y}"/><circle class="mk" cx="${cx}" cy="${y}" r="4"/>
+      <text class="mt" x="${tx}" y="${y}" text-anchor="${anchor}">${esc(lab)}</text>${val}
+      <rect class="hit" x="${Math.min(x1, tx - (anchor === "end" ? 50 : 0)) }" y="${y - 12}" width="${Math.max(x2, tx + (anchor === "start" ? 50 : 0)) - Math.min(x1, tx - (anchor === "end" ? 50 : 0))}" height="26"/></g>`;
+  }).join("");
+  svg.innerHTML = fig + spots;
+  const [k, lab] = MPOS.find(m => m[0] === mSel), full = (MEAS.find(m => m[0] === k) || [k, lab])[1], last = mLast(k), inp = $("#m-" + k);
+  const ed = $("#mEdit"), had = document.activeElement && document.activeElement.id === "meVal";
+  ed.innerHTML = `<div class="mehead"><b>${esc(full)}</b><span class="sub">${last ? `Last: ${fmt(last.v, 2)} in (${fDate(last.d)})` : "No history yet"}</span></div>
+    <p class="sub">${esc(MHOW[k] || "")}</p>
+    <div class="merow"><button type="button" class="ghost" data-mstep="-0.25" aria-label="Down a quarter inch">−</button><input id="meVal" type="number" inputmode="decimal" step="0.25" placeholder="${last ? fmt(last.v, 2) : "inches"}" value="${esc(inp.value)}" aria-label="${esc(full)} in inches"><button type="button" class="ghost" data-mstep="0.25" aria-label="Up a quarter inch">+</button><button type="button" id="meNext">Next →</button></div>`;
+  if (had) { const f = $("#meVal"); f.focus(); f.setSelectionRange && f.type !== "number" && f.setSelectionRange(99, 99); }
+  const n = MEAS.filter(([kk]) => num(($("#m-" + kk) || {}).value) != null).length;
+  $("#mSave").textContent = n ? `Log ${n} measurement${n > 1 ? "s" : ""}` : "Log measurements"; $("#mClear").hidden = !n;
+}
+$("#mSvg").addEventListener("click", e => { const g = e.target.closest("[data-mk]"); if (!g) return; mSel = g.dataset.mk; buzz(false); renderMDiag(); const f = $("#meVal"); if (f) f.focus(); });
+$("#mEdit").addEventListener("input", e => { if (e.target.id !== "meVal") return; $("#m-" + mSel).value = e.target.value; const keep = e.target.value; renderMDiag(); const f = $("#meVal"); f.value = keep; f.focus(); });
+$("#mEdit").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.mstep) { const inp = $("#m-" + mSel), last = mLast(mSel), cur = num(inp.value) ?? (last ? last.v : null);
+    inp.value = cur == null ? "" : Math.max(0, Math.round((cur + (cur === num(inp.value) ? +b.dataset.mstep : 0)) * 4) / 4); buzz(false); renderMDiag(); return; }
+  if (b.id === "meNext") { const i = MPOS.findIndex(m => m[0] === mSel); mSel = MPOS[(i + 1) % MPOS.length][0]; renderMDiag(); const f = $("#meVal"); if (f) f.focus(); }
+});
+$("#mClear").addEventListener("click", () => { MEAS.forEach(([k]) => { const el = $("#m-" + k); if (el) el.value = ""; }); renderMDiag(); });
 $("#mSave").addEventListener("click", async () => {
   const d = $("#mDate").value; if (!d) { toast($("#mToast"), "Pick a date first.", true); return; }
   const body = {date:d}; let n = 0;
   MEAS.forEach(([k]) => { const v = num($("#m-"+k).value); if (v != null && v > 3 && v < 80) { body[k] = Math.round(v*100)/100; n++; } });
   if (!n) { toast($("#mToast"), "Enter at least one measurement in inches.", true); return; }
   const prev = state.measures[d]; if (prev) MEAS.forEach(([k]) => { if (body[k] == null && prev[k] != null) body[k] = prev[k]; });
-  try { await putMeasure(d, body); MEAS.forEach(([k]) => $("#m-"+k).value = ""); toast($("#mToast"), `Logged ${n} measurement${n>1?"s":""} for ${fDate(d)}`); }
+  try { await putMeasure(d, body); MEAS.forEach(([k]) => $("#m-"+k).value = ""); renderMDiag(); feedback(true); toast($("#mToast"), `Logged ${n} measurement${n>1?"s":""} for ${fDate(d)}`); }
   catch(e){ toast($("#mToast"), "Couldn't save. Check your connection and try again.", true); }
 });
 $("#mBody").addEventListener("click", async e => {
@@ -3338,7 +3420,7 @@ renderTimer();
 </script>
 
 <script>
-window.APP_V = 63; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
+window.APP_V = 65; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
 // Check for a new version whenever the app comes back to the screen; reload into it once it's ready
 // (but never in the middle of the one-at-a-time workout view).
 if ("serviceWorker" in navigator) addEventListener("load", () => {
