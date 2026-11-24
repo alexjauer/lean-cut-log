@@ -563,6 +563,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <h2>Backup</h2>
       <p class="sub" style="margin:4px 0 12px">Your entries are stored only on this phone. Export a backup every week or two, and always before deleting the app or clearing Safari data. Save it to Files or iCloud Drive.</p>
       <div class="savebar"><button type="button" class="primary" id="bkExport">Export backup</button><label class="filebtn"><input type="file" id="bkImport" accept="application/json,.json">Import backup</label><span class="toast" id="bkToast" role="status"></span></div>
+      <p class="sub" id="appVer" style="margin:8px 0 0"></p>
     </div>
   </section>
 
@@ -3312,6 +3313,7 @@ $("#cxForm").addEventListener("submit", e => {
   toast($("#bkToast"), "");
 });
 function renderAll(){
+  try { if (window.APP_V) $("#appVer").textContent = `App version ${window.APP_V}`; } catch(e){}
   try { renderLib(); renderLog(); renderProgress(); renderWeight(); renderMeasures(); renderWater(); renderFood(); renderReport(); } catch(e){ console.error(e); }
 }
 renderAll();
@@ -3319,6 +3321,19 @@ route();
 renderTimer();
 </script>
 
-<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
+<script>
+window.APP_V = 59;
+// Check for a new version whenever the app comes back to the screen; reload into it once it's ready
+// (but never in the middle of the one-at-a-time workout view).
+if ("serviceWorker" in navigator) addEventListener("load", () => {
+  let pending = false;
+  const apply = () => { if (pending && !document.hidden && !(typeof focus === "object" && focus.open)) location.reload(); };
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    reg.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) { reg.update().catch(() => {}); apply(); } });
+  }).catch(() => {});
+  if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener("controllerchange", () => { pending = true; apply(); });
+});
+</script>
 </body>
 </html>
