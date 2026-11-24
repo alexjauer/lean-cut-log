@@ -1173,22 +1173,26 @@ let planEdits = (() => { try { return JSON.parse(localStorage.getItem(PK) || "{}
 function planEditsSave(){ try { localStorage.setItem(PK, JSON.stringify(planEdits)); } catch(e){} }
 function basePlan(day, loc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
 function plan(day = curDay, loc = curLoc){ const p = basePlan(day, loc), e = (day === curDay && planEdits[curDate + "|" + day + "-" + p.loc]) || planEdits[day + "-" + p.loc]; return e && Array.isArray(e) ? {...p, x:e.filter(it => EX[it[0]]), edited:true} : p; }
-// One-time race-week setup: Dec 1 is race day, lighter legs Sat/Sun before, and a race rehearsal run Sunday.
+// One-time race-week setup for the 5K on Sat Dec 5: race day, a race-time rehearsal run the Saturday before,
+// and a lighter Thursday (legs + run) two days out. Also undoes the earlier Dec 1 setup.
 (() => {
-  const KEY = "leancut-race-2026-12-01"; try { if (localStorage.getItem(KEY)) return; } catch(e){ return; }
-  if (today() > "2026-12-01") return;
-  dayOv["2026-12-01"] = "race";
-  const legs = r => EX[r[0]] && ["quads","hamstrings","glutes"].includes((EX[r[0]].m || [])[0]);
-  [["2026-11-28","fri"],["2026-11-29","mon"]].forEach(([ds, day]) => {
-    if (ds < today()) return;
-    ["gym","home"].forEach(loc => {
-      const p = basePlan(day, loc); if (p.loc !== loc) return;
-      const x = (planEdits[day + "-" + loc] || p.x).map(r => r.slice(0, 4));
-      x.forEach(r => { if (legs(r) && r[1] > 2) r[1] = 2; });
-      if (ds === "2026-11-29") x.splice(x[0] && x[0][0] === "heelwarm" ? 1 : 0, 0, ["easyrun", 1, "20–25 min at 9 am (race rehearsal)", ""]);
-      planEdits[ds + "|" + day + "-" + loc] = x;
+  const KEY = "leancut-race-2026-12-05"; try { if (localStorage.getItem(KEY)) return; } catch(e){ return; }
+  if (dayOv["2026-12-01"] === "race") delete dayOv["2026-12-01"];
+  Object.keys(planEdits).filter(k => k.startsWith("2026-11-28|") || k.startsWith("2026-11-29|")).forEach(k => delete planEdits[k]);
+  if (today() <= "2026-12-05") {
+    dayOv["2026-12-05"] = "race";
+    const legs = r => EX[r[0]] && ["quads","hamstrings","glutes"].includes((EX[r[0]].m || [])[0]);
+    [["2026-11-28","fri"],["2026-12-03","thu"]].forEach(([ds, day]) => {
+      if (ds < today()) return;
+      ["gym","home"].forEach(loc => {
+        const p = basePlan(day, loc); if (p.loc !== loc) return;
+        const x = (planEdits[day + "-" + loc] || p.x).filter(r => EX[r[0]]).map(r => r.slice(0, 4));
+        if (ds === "2026-11-28") x.splice(x[0] && x[0][0] === "heelwarm" ? 1 : 0, 0, ["easyrun", 1, "20–25 min at 9:15 am (race rehearsal)", ""]);
+        else { x.forEach(r => { if (legs(r) && r[1] > 2) r[1] = 2; if (r[0] === "run") r[2] = "15 min easy (taper)"; }); }
+        planEdits[ds + "|" + day + "-" + loc] = x;
+      });
     });
-  });
+  }
   try { localStorage.setItem(PK, JSON.stringify(planEdits)); localStorage.setItem(DOK, JSON.stringify(dayOv)); localStorage.setItem(KEY, "1"); } catch(e){}
 })();
 function editPlan(fn){
