@@ -267,6 +267,7 @@ textarea{resize:vertical;line-height:1.4}
 .donechip{color:var(--muted)}
 .donechip.alldone{color:var(--good)}
 .donechip:empty{display:none}
+.bandsel{width:100%;padding:8px 6px;font-size:16px;text-align:center;font-family:var(--f-num)}
 .days .tg{display:block;font-size:10px;font-weight:600;color:var(--accent);line-height:1.1;margin-top:1px}
 .days .tg.rest{color:var(--muted)}
 .days button[aria-pressed="true"] .tg{color:inherit}
@@ -752,7 +753,7 @@ const EX = {
   tridip:{n:"Triceps press / seated dip machine",k:"lift"}, cablelat:{n:"Cable lateral raise",k:"lift"}, machlat:{n:"Machine lateral raise",k:"lift"},
   revdeck:{n:"Reverse pec deck",k:"lift"}, pecdeck:{n:"Pec deck fly",k:"lift"}, machrow:{n:"Machine row (chest-supported)",k:"lift"},
   hacksq:{n:"Hack squat machine",k:"lift"}, smithsq:{n:"Smith machine squat",k:"lift"}, legext:{n:"Leg extension",k:"lift"},
-  calfpress:{n:"Calf press on the leg press",k:"lift"}, backext:{n:"45° back extension",k:"bw"},
+  calfpress:{n:"Calf press on the leg press",k:"lift"}, backext:{n:"45° back extension",k:"bw"}, race5k:{n:"5K race (finish time)",k:"min"}, warmjog:{n:"Pre-race warm-up jog",k:"min"}, easyrun:{n:"Easy run (outdoors)",k:"min"},
   dbfly:{n:"Dumbbell chest fly",k:"lift"}, bentrow2:{n:"Bent-over dumbbell row (two-arm)",k:"lift"}, xhammer:{n:"Cross-body hammer curl",k:"lift"},
   frontraise:{n:"Dumbbell front raise",k:"lift"}, revlunge:{n:"Dumbbell reverse lunge",k:"lift"}, reversecurl:{n:"Reverse curl (palms down)",k:"lift"},
   conccurl:{n:"Concentration curl",k:"lift"}, rconccurl:{n:"Reverse-grip concentration curl",k:"lift"}, waiter:{n:"Waiter curl",k:"lift"},
@@ -776,7 +777,7 @@ const MUSCLE_TAGS = {
   triceps:["ohdb","ohcable","skull","dbskull","pushdown","dpushdown","dohext","tridip","cgbench","floorpress","ohext1","kickback","bkick"],
   calves:["calfst","calfse","calfpress"],
   core:["deadbug","cablecr","kneeraise","revcrunch","plank","sideplank","birddog","pallof","pallofc","abwheel","abcrunch","captain","suitcase","brot","bcrunch","bchop"],
-  cardio:["incwalk","run","intervals","bike","walk","circuit"],
+  cardio:["incwalk","run","intervals","bike","walk","circuit","easyrun","race5k","warmjog"],
   forearms:["reversecurl","rconccurl","wristcurl","rwristcurl"], traps:["shrug"],
   rehab:["heelwarm","calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck","mobility"], daily:["steps"]
 };
@@ -801,7 +802,7 @@ const EQUIP_TAGS = {
   door:["dface","dpushdown","dpulldown","drow","dohext","pallof","bcrunch","bchop","brot","bfly"],
   band:["bandankle","bandevert","bpullapart","bcurl","bhammer","bfront","blat","bohp","bkick"], loop:["bandabd","bandwalk","clamshell"],
   bw:["pushup","deadbug","plank","sideplank","birddog","revcrunch","sbridge","bridge","calfst","heelwarm","calfstretch","anklealpha","shortfoot","balance","tibraise","chintuck","mobility","floorpress"],
-  bar:["pullup","kneeraise","captain"], wheel:["abwheel"], cardio:["incwalk","run","intervals","bike"], none:["walk","steps"], bench:["backext"]
+  bar:["pullup","kneeraise","captain"], wheel:["abwheel"], cardio:["incwalk","run","intervals","bike"], none:["walk","steps","easyrun","race5k","warmjog"], bench:["backext"]
 };
 const EQUIP_ALSO = {
   shpress:["bench"], csrow:["bench"], inccurl:["bench"], dbbench:["bench"], bss:["bench"], incpress:["bench"], dbfly:["bench"], conccurl:["bench"], rconccurl:["bench"], kickback:["bench"], dbskull:["bench"],
@@ -855,14 +856,15 @@ const DAYS = {
     alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"4 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["dbcurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["deadbug",3,"8/side"],["hipabd",2,"15–20","o"],["incwalk",1,"10 min","o"]]}},
   tue:{name:"Full Body B", t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"4 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["shpress",3,"8–10","A"],["csrow",3,"10–12","A"],["inccurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["cablecr",3,"12–15"],["hipabd",2,"15–20","o"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
     alt:{loc:"home", d:"Full Body B · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["dpulldown",3,"12–15"],["dbcurl",3,"10–15","B"],["dpushdown",3,"12–15","B"],["deadbug",3,"8/side"],["bandabd",2,"20–25","o"],["dface",2,"15–20","o"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
-  wed:{name:"Recovery", t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000–10,000"]]},
+  wed:{name:"Recovery", t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",2,"1 alphabet"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"]]},
   thu:{name:"Full Body C", t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"4 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["hammer",3,"8–12","B"],["dbskull",3,"10–12","B"],["hipthrust",3,"8–12"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["kneeraise",3,"10–12","o"]],
     alt:{loc:"home", d:"Full Body C · home", x:[["heelwarm",1,"4 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["sbridge",3,"10–15/side"],["abwheel",3,"6–10"],["revcrunch",3,"10–15","o"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
   fri:{name:"Full Body D", t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"4 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["pallofc",2,"10/side"],["cablekick",2,"12–15/side","o"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
     alt:{loc:"home", d:"Full Body D · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["drow",3,"12–15","A"],["latraise",3,"15–20","B"],["dface",2,"15–20","B"],["dbcurl",3,"10–15","C"],["dohext",3,"12–15","C"],["pallof",2,"10/side"],["bandwalk",2,"10 steps each way","o"],["circuit",1,"max rounds","o"]]}},
   sat:{name:"Arms + core", t:"Sat", loc:"home", d:"Arms + core · home", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["dpushdown",3,"12–15","B"],["latraise",3,"15–20"],["pallof",3,"10/side"],["abwheel",3,"6–10"],["plank",3,"30–45 sec","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["walk",1,"20–30 min","o"]],
     alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
-  sun:{name:"Rest + rehab", t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",1,"2 alphabets"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["steps",1,"8,000+"],["walk",1,"20 min, easy","o"]]}
+  race:{name:"5K race day", t:"Race", loc:"rest", d:"5K race · 9:15 start, check in 8:00 · no lifting", x:[["heelwarm",1,"4 min"],["warmjog",1,"5–10 min easy + 3 short pickups"],["race5k",1,"5K"],["walk",1,"10 min cool-down"],["calfstretch",2,"30 sec each, both legs"]]},
+  sun:{name:"Rest + rehab", t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",2,"1 alphabet"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["walk",1,"20 min, easy","o"]]}
 };
 const KUNIT = {steps:["steps"],lift:["lb","reps"],bw:["reps"],time:["sec"],min:["min"],rounds:["rounds"]};
 const START_W = 180, GOAL_W = 165;
@@ -884,7 +886,7 @@ let dayOv = (() => { try { return JSON.parse(localStorage.getItem(DOK) || "{}") 
 function schedSave(){ try { localStorage.setItem(SCK, JSON.stringify(sched)); localStorage.setItem(DOK, JSON.stringify(dayOv)); } catch(e){} }
 const wdIdx = s => (pDate(s).getDay() + 6) % 7; // Mon = 0
 const WDS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], WDL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
-const SHORT = {mon:"A", tue:"B", wed:"Rec", thu:"C", fri:"D", sat:"Arms", sun:"Rest"};
+const SHORT = {race:"5K", mon:"A", tue:"B", wed:"Rec", thu:"C", fri:"D", sat:"Arms", sun:"Rest"};
 // A day you already logged keeps the workout you logged; otherwise a one-off change, then the weekly plan.
 function dayForDate(s){
   if (typeof state !== "undefined" && state.sessions) { const id = Object.keys(state.sessions).find(id => id.startsWith(s + "_")); if (id) return state.sessions[id].day; }
@@ -998,6 +1000,9 @@ const FORM = {
   plank:["Forearms down, elbows under shoulders, body straight head to heels. Squeeze the glutes, pull the belly button in.","A hard 30 seconds beats a sloppy 2 minutes.","Eyes on the floor between the hands. Stop when the hips sag."],
   sideplank:["On one forearm, elbow under the shoulder, feet stacked (knees bent to make it easier). Lift the hips into a straight line.","Works the obliques. Push the hips slightly forward.","Head in line with the spine, not dropping toward the shoulder."],
   birddog:["Hands and knees. Reach one arm forward and the opposite leg back until level, hold 3 seconds, switch.","No rocking; imagine a glass of water on the lower back. Light ankle weights make it harder.","Eyes on the floor, neck long."],
+  race5k:["Start slower than feels right; the first half-mile should feel easy. Settle into a pace where you could still say a few words. Walk breaks are fine: try 4–5 minutes running, 1 minute walking. Pick it up in the last half-mile if you have anything left.","Log your finish time in minutes, rounded (e.g. 34). It's your baseline for the next one.","Short, quick steps and land under your hips, which is easier on the left heel. If the outer heel starts to hurt sharply, walk."],
+  warmjog:["About 30 minutes before the start: 5–10 minutes of easy jogging, then 3 relaxed pickups of 15–20 seconds at race pace.","Gets your heart rate up and the stiff left ankle moving, so the first mile feels smoother.","Easy. You're warming up, not racing."],
+  easyrun:["Conversational pace outdoors. On race-rehearsal day, do it at the race time after the same breakfast and coffee.","Builds your aerobic base and makes race morning feel familiar.","Same shoes you'll race in. Walk if the left heel complains."],
   incwalk:["10–12% incline, 3.0–4.0 mph. Jog only what feels comfortable; walk the rest.","Steady hard effort burns a lot without pounding legs that just squatted.","Don't hold the handrails; lower the incline instead. Ramp the incline over the first 2 minutes."],
   run:["Run tall with a slight lean from the ankles. Short quick steps (about 160–170 a minute), feet landing under the hips.","Conversational pace: full sentences. Add 3–5 minutes a week up to 35.","Most shin and knee pain comes from adding too much too fast or overstriding. Running shoes, relaxed shoulders and jaw. Left heel: if it aches during or the morning after a run, hold that week's time instead of adding, and swap a run for the bike if it flares."],
   intervals:[{lead:"Treadmill intervals:", items:["3 minutes of easy walking to warm up","1 minute fast, about 8 out of 10 effort","90 seconds of walking","Repeat the fast minute and the walk 6–8 times"]},"Add 0.2–0.3 mph a week only if every round feels repeatable.","Step onto the side rails to change speed; never jump onto a moving belt."],
@@ -1026,6 +1031,7 @@ function formHtml(k){
 
 /* ---------- Target muscles ---------- */
 const MUSCLE = {
+  race5k:"Cardio · Legs", warmjog:"Cardio · Ankle mobility", easyrun:"Cardio · Legs",
   clamshell:"Glutes (upper/side) · Hip stability", hipabd:"Glutes (upper/side) · Hip stability", cablekick:"Glutes", bandabd:"Glutes (upper/side)", bandwalk:"Glutes (upper/side) · Hip stability",
   dbfly:"Chest", bentrow2:"Upper back · Lats · Biceps", xhammer:"Brachialis · Forearms · Biceps", frontraise:"Front delts · Upper chest", revlunge:"Quads · Glutes",
   reversecurl:"Forearms (brachioradialis) · Biceps", conccurl:"Biceps", rconccurl:"Forearms (brachioradialis) · Biceps", waiter:"Biceps",
@@ -1165,14 +1171,34 @@ const PK = "leancut-plans";
 let planEdits = (() => { try { return JSON.parse(localStorage.getItem(PK) || "{}") || {}; } catch(e){ return {}; } })();
 function planEditsSave(){ try { localStorage.setItem(PK, JSON.stringify(planEdits)); } catch(e){} }
 function basePlan(day, loc){ const D = DAYS[day]; return D.alt && loc === D.alt.loc ? {loc:D.alt.loc, d:D.alt.d, x:D.alt.x} : {loc:D.loc, d:D.d, x:D.x}; }
-function plan(day = curDay, loc = curLoc){ const p = basePlan(day, loc), e = planEdits[day + "-" + p.loc]; return e && Array.isArray(e) ? {...p, x:e.filter(it => EX[it[0]]), edited:true} : p; }
+function plan(day = curDay, loc = curLoc){ const p = basePlan(day, loc), e = (day === curDay && planEdits[curDate + "|" + day + "-" + p.loc]) || planEdits[day + "-" + p.loc]; return e && Array.isArray(e) ? {...p, x:e.filter(it => EX[it[0]]), edited:true} : p; }
+// One-time race-week setup: Dec 1 is race day, lighter legs Sat/Sun before, and a race rehearsal run Sunday.
+(() => {
+  const KEY = "leancut-race-2026-12-01"; try { if (localStorage.getItem(KEY)) return; } catch(e){ return; }
+  if (today() > "2026-12-01") return;
+  dayOv["2026-12-01"] = "race";
+  const legs = r => EX[r[0]] && ["quads","hamstrings","glutes"].includes((EX[r[0]].m || [])[0]);
+  [["2026-11-28","fri"],["2026-11-29","mon"]].forEach(([ds, day]) => {
+    if (ds < today()) return;
+    ["gym","home"].forEach(loc => {
+      const p = basePlan(day, loc); if (p.loc !== loc) return;
+      const x = (planEdits[day + "-" + loc] || p.x).map(r => r.slice(0, 4));
+      x.forEach(r => { if (legs(r) && r[1] > 2) r[1] = 2; });
+      if (ds === "2026-11-29") x.splice(x[0] && x[0][0] === "heelwarm" ? 1 : 0, 0, ["easyrun", 1, "20–25 min at 9 am (race rehearsal)", ""]);
+      planEdits[ds + "|" + day + "-" + loc] = x;
+    });
+  });
+  try { localStorage.setItem(PK, JSON.stringify(planEdits)); localStorage.setItem(DOK, JSON.stringify(dayOv)); localStorage.setItem(KEY, "1"); } catch(e){}
+})();
 function editPlan(fn){
-  const p = plan(), id = curDay + "-" + p.loc, x = p.x.map(it => it.slice(0, 4));
-  fn(x);
+  const p = plan(), id = curDay + "-" + p.loc, dk = curDate + "|" + id;
   // A superset letter left with only one exercise becomes a normal exercise.
-  const cnt = {}; x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""); if (L) cnt[L] = (cnt[L] || 0) + 1; });
-  x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""); if (L && cnt[L] < 2) r[3] = (r[3] || "").replace(L, ""); });
-  planEdits[id] = x; planEditsSave();
+  const tidy = x => { const cnt = {}; x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""); if (L) cnt[L] = (cnt[L] || 0) + 1; });
+    x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""); if (L && cnt[L] < 2) r[3] = (r[3] || "").replace(L, ""); }); return x; };
+  // Routine edits always go to the routine; a date-only version (race week) gets the same change.
+  const tx = (planEdits[id] || basePlan(curDay, p.loc).x).filter(it => EX[it[0]]).map(it => it.slice(0, 4)); fn(tx); planEdits[id] = tidy(tx);
+  if (planEdits[dk]) { const dx = planEdits[dk].map(it => it.slice(0, 4)); fn(dx); planEdits[dk] = tidy(dx); }
+  planEditsSave();
   if (mode === "run") draftSave(); dirty = false; buildDraft(); renderDayPick(); renderExList();
 }
 const DEF_TARGET = {lift:"10–12", bw:"10–15", time:"30 sec", min:"10 min", rounds:"3 rounds", steps:"8,000"};
@@ -1311,7 +1337,7 @@ function buildDraft(){
 function setsText(k, sets){
   const kind = EX[k].k;
   return sets.filter(r => r.some(v => v !== "" && v != null)).map(r =>
-    kind === "lift" ? `${r[0] || 0}×${r[1] || 0}` : `${r[0]}`).join(", ") + (kind === "lift" ? "" : " " + KUNIT[kind][0]);
+    kind === "lift" ? `${BAND_NAME[r[0]] || r[0] || 0}×${r[1] || 0}` : `${r[0]}`).join(", ") + (kind === "lift" ? "" : " " + KUNIT[kind][0]);
 }
 function addDays(str, n){ const d = pDate(str); d.setDate(d.getDate() + n); return iso(d); }
 function mondayOf(str){ const d = pDate(str); return addDays(str, -((d.getDay() + 6) % 7)); }
@@ -1361,7 +1387,13 @@ function stepOf(k, j){
 }
 // Locked: the day's workout is saved with every essential done (tap Edit to change it).
 const wkLocked = () => !unlocked && !dirty && !!state.sessions[sid()] && essentialsDone();
+// Bands log a band (light/medium/heavy); door-anchor bungees log their rating (10–50 lb).
+const BAND_OPTS = [["L","Light"],["M","Medium"],["H","Heavy"]], DOOR_OPTS = [10,20,30,40,50].map(n => [n, n + " lb"]);
+const bandOpts = k => EX[k].k === "lift" ? ((EX[k].eq || [])[0] === "door" ? DOOR_OPTS : ["band","loop"].includes((EX[k].eq || [])[0]) ? BAND_OPTS : null) : null;
+const BAND_NAME = {L:"Light", M:"Medium", H:"Heavy"};
 function exInput(k, i, j, v, lock){
+  const bo = j === 0 && bandOpts(k);
+  if (bo) return `<select id="in-${k}-${i}-${j}" data-k="${k}" data-i="${i}" data-j="${j}" class="bandsel" aria-label="${esc(EX[k].n)} set ${i+1} ${bo === BAND_OPTS ? "band" : "bungee"}"${lock ? " disabled" : ""}><option value="">${bo === BAND_OPTS ? "Band" : "lb"}</option>${bo.map(([val, lab]) => `<option value="${val}"${String(v) === String(val) ? " selected" : ""}>${lab}</option>`).join("")}</select>`;
   const u = KUNIT[EX[k].k], h = hints[k] && hints[k][i];
   const ph = h && h[j] !== "" && h[j] != null && !(EX[k].k === "lift" && j === 0) ? h[j] + " " + u[j] : u[j];
   const inp = `<input id="in-${k}-${i}-${j}" data-k="${k}" data-i="${i}" data-j="${j}" type="number" inputmode="decimal" step="${u[j]==="lb"?"2.5":"1"}" min="0" placeholder="${ph}" aria-label="${esc(EX[k].n)} set ${i+1} ${u[j]}" value="${esc(v ?? "")}"${lock ? " readonly" : ""}>`;
@@ -1601,7 +1633,10 @@ const exInputH = e => {
   const t = e.target;
   if (t.dataset.rnote) { rnoteSet(t.dataset.rnote, t.value); return; }
   if (t.dataset.note) { notes[t.dataset.note] = t.value; markDirty(); return; } if (!t.dataset.k) return;
-  draft[t.dataset.k][+t.dataset.i][+t.dataset.j] = t.value; markDirty();
+  draft[t.dataset.k][+t.dataset.i][+t.dataset.j] = t.value;
+  // Picking a band fills the same band into the later sets that are still empty.
+  if (t.tagName === "SELECT") { const k = t.dataset.k; draft[k].forEach((r, i) => { if (i > +t.dataset.i && !done[k][i] && (r[0] === "" || r[0] == null)) { r[0] = t.value; const el = document.getElementById(`in-${k}-${i}-0`); if (el) el.value = t.value; } }); }
+  markDirty();
 };
 $("#exList").addEventListener("input", exInputH);
 $("#exList").addEventListener("change", e => { const t = e.target; if (t.dataset.et) { const k = t.dataset.et, v = t.value.trim(); if (v) editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[2] = v; }); } });
@@ -1737,7 +1772,7 @@ $("#saveBtn").addEventListener("click", () => saveWorkout());
 async function saveWorkout(){
   const sets = {}, doneOut = {};
   for (const [k, rows] of Object.entries(draft)) {
-    const clean = rows.map(r => r.map(v => num(v)));
+    const clean = rows.map(r => r.map((v,j) => j === 0 && BAND_NAME[v] ? v : num(v)));
     // A lift set counts only once reps are entered (weights may be pre-filled from last time).
     const keep = clean.map(r => EX[k].k === "lift" ? r[1] != null : r.some(v => v != null));
     const kept = clean.filter((r,i) => keep[i]); if (!kept.length) continue;
@@ -2076,7 +2111,7 @@ function niceStep(raw){ const p = 10 ** Math.floor(Math.log10(raw || 1)); const 
 let curEx = null;
 /* ---------- progress scoring: estimated 1-rep max, reps, or time ---------- */
 // e1RM = weight × (1 + reps ÷ 30). Bodyweight moves score by reps; assisted pull-ups use body weight minus the assist.
-const PR_SKIP = ["heelwarm","mobility","walk","steps","incwalk","intervals","calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck"];
+const PR_SKIP = ["race5k","warmjog","heelwarm","mobility","walk","steps","incwalk","intervals","calfstretch","anklealpha","shortfoot","bandankle","bandevert","balance","tibraise","chintuck"];
 const MODE_UNIT = {reps:"reps", sec:"sec", min:"min", rounds:"rounds"};
 function bwOn(date){
   const w = Object.values(state.weights).filter(x => x.date <= date && num(x.lb) != null).sort((a,b) => b.date.localeCompare(a.date))[0];
@@ -2999,7 +3034,7 @@ const ANIM_OF = {
   dbcurl:"curl", hammer:"curl", ezcurl:"ezcurl", inccurl:"inccurl", preacher:"preacher",
   ohdb:"ohext", ohcable:"ohcable", pushdown:"pushdown", skull:"skull", dbskull:["skull","db"],
   deadbug:"deadbug", birddog:"birddog", cablecr:"cablecr", kneeraise:"kneeraise", revcrunch:"revcrunch",
-  walk:"walk", steps:"walk", incwalk:"incwalk", run:"run", intervals:"run", bike:"bike", circuit:"circuit",
+  walk:"walk", steps:"walk", easyrun:"run", race5k:"run", warmjog:"run", incwalk:"incwalk", run:"run", intervals:"run", bike:"bike", circuit:"circuit",
   dface:"facepull", dpushdown:"pushdown", dpulldown:"pulldown", drow:"cablerow", dohext:"ohcable", pallof:"pallof", abwheel:"abwheel",
   abcrunch:"cablecr", captain:"kneeraise", pallofc:"pallof", cablecurl:["curl","handle"], machcurl:"preacher", ropehammer:["curl","handle"], tridip:"pushdown", cablelat:"latraise", machlat:"latraise", revdeck:"revfly", pecdeck:"chestpress", machrow:"cablerow", hacksq:"squat", smithsq:"squat", calfpress:"calf",
   bentrow2:"row1", xhammer:"curl", reversecurl:"curl", waiter:"curl", revlunge:"lunge", ohext1:"ohext", bcurl:["curl","handle"], bhammer:["curl","handle"], bcrunch:"cablecr", blat:"latraise", bohp:"shpress",
