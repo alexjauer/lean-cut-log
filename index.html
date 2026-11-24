@@ -543,7 +543,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
     <div class="panel" id="wBody"></div>
     <div class="panel">
       <h2>Measurements</h2>
-      <p class="sub" style="margin:4px 0 12px">Every 2 weeks, first thing in the morning, tape snug but not squeezing, same spot each time. Fill in whichever you measured.</p>
+      <p class="sub" style="margin:4px 0 12px">Every 2 weeks, first thing in the morning before eating. Tape flat on the skin and level, snug but not pressing in. Fill in whichever you measured.</p>
       <div class="mgrid">
         <div class="field"><label class="label" for="mDate">Date</label><input type="date" id="mDate"></div>
         <div class="field"><label class="label" for="m-waist">Waist at navel</label><input type="number" inputmode="decimal" step="0.25" id="m-waist" placeholder="in"></div>
@@ -551,11 +551,12 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
         <div class="field"><label class="label" for="m-shoulders">Shoulders</label><input type="number" inputmode="decimal" step="0.25" id="m-shoulders" placeholder="in"></div>
         <div class="field"><label class="label" for="m-armR">Right arm</label><input type="number" inputmode="decimal" step="0.25" id="m-armR" placeholder="in"></div>
         <div class="field"><label class="label" for="m-armL">Left arm</label><input type="number" inputmode="decimal" step="0.25" id="m-armL" placeholder="in"></div>
-        <div class="field"><label class="label" for="m-thigh">Thigh</label><input type="number" inputmode="decimal" step="0.25" id="m-thigh" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-thigh">Right thigh</label><input type="number" inputmode="decimal" step="0.25" id="m-thigh" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-thighL">Left thigh</label><input type="number" inputmode="decimal" step="0.25" id="m-thighL" placeholder="in"></div>
       </div>
       <div class="savebar" style="margin-top:12px"><button class="primary" id="mSave">Log measurements</button><span class="toast" id="mToast" role="status"></span></div>
       <details class="fn" style="margin-top:12px"><summary><span class="label">Where to measure</span><span class="i">Show</span></summary>
-        <dl class="form"><dt>Waist</dt><dd>Around the belly button, relaxed, after breathing out normally.</dd><dt>Chest</dt><dd>Around the nipple line, arms at the sides.</dd><dt>Shoulders</dt><dd>Around the widest point of the shoulders, arms relaxed.</dd><dt>Arms</dt><dd>Around the biggest part of the upper arm, flexed (fist to shoulder).</dd><dt>Thigh</dt><dd>Around the right thigh halfway between hip and knee, standing.</dd></dl>
+        <dl class="form"><dt>Tape</dt><dd>Flat against the skin and level all the way around, snug enough not to slip but not denting the skin. Measure twice; if they differ, take the average. A mirror helps you keep it level.</dd><dt>Flexed or relaxed</dt><dd>Everything relaxed except the arms. What matters most is doing it the same way every time.</dd><dt>Waist</dt><dd>Around the belly button, standing relaxed, after breathing out normally. Don't suck in.</dd><dt>Chest</dt><dd>Around the nipple line and under the armpits, arms relaxed at your sides, after a normal breath out.</dd><dt>Shoulders</dt><dd>A full loop around the widest part of the shoulders: over the outside bulge of both shoulder muscles in front and across the back, a few inches below the top of the shoulders. Stand tall, arms hanging relaxed. Easiest with a helper; alone, use a mirror to keep the tape level across the back.</dd><dt>Arms</dt><dd>Flexed: bend the elbow, make a fist and squeeze the biceps, then measure around the biggest part. Both arms.</dd><dt>Thighs</dt><dd>Standing, weight on both feet, muscles relaxed, halfway between the hip crease and the top of the kneecap. Both legs: the left leg can lose some size after a heel injury, so tracking both shows if they're evening out.</dd></dl>
       </details>
     </div>
     <div class="panel" id="mBody"></div>
@@ -2647,7 +2648,7 @@ $("#wUndo").addEventListener("click", async () => {
 
 /* ---------- MEASUREMENTS ---------- */
 // good: which direction is progress (-1 smaller is better, +1 bigger is better, 0 neutral)
-const MEAS = [["waist","Waist",-1],["chest","Chest",1],["shoulders","Shoulders",1],["armR","Right arm",1],["armL","Left arm",1],["thigh","Thigh",0]];
+const MEAS = [["waist","Waist",-1],["chest","Chest",1],["shoulders","Shoulders",1],["armR","Right arm",1],["armL","Left arm",1],["thigh","Right thigh",0],["thighL","Left thigh",0]];
 let curMeas = "waist";
 function renderMeasures(){
   if (!$("#mDate").value) $("#mDate").value = today();
@@ -2666,7 +2667,7 @@ function renderMeasures(){
   const have = MEAS.filter(([k]) => rows.some(r => num(r[k]) != null));
   if (!have.some(([k]) => k === curMeas)) curMeas = have[0][0];
   const pts = rows.filter(r => num(r[curMeas]) != null).map(r => ({x:r.date, y:num(r[curMeas])}));
-  const hist = rows.slice().reverse().map(r => `<tr><td>${fDate(r.date)}</td><td class="num sub">${esc(MEAS.filter(([k]) => num(r[k]) != null).map(([k,l]) => `${l.split(" ")[0]==="Right"?"R arm":l.split(" ")[0]==="Left"?"L arm":l} ${r[k]}`).join(" · "))}</td><td class="r"><button type="button" class="ghost danger" data-mdel="${r.date}" aria-label="Delete ${fDate(r.date)} measurements">Remove</button></td></tr>`).join("");
+  const hist = rows.slice().reverse().map(r => `<tr><td>${fDate(r.date)}</td><td class="num sub">${esc(MEAS.filter(([k]) => num(r[k]) != null).map(([k,l]) => `${l.replace(/^Right /,"R ").replace(/^Left /,"L ")} ${r[k]}`).join(" · "))}</td><td class="r"><button type="button" class="ghost danger" data-mdel="${r.date}" aria-label="Delete ${fDate(r.date)} measurements">Remove</button></td></tr>`).join("");
   $("#mBody").innerHTML = `
     <div style="display:flex;flex-direction:column;gap:14px">
       <h2>Measurement trend</h2>
@@ -3322,7 +3323,7 @@ renderTimer();
 </script>
 
 <script>
-window.APP_V = 61; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
+window.APP_V = 62; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
 // Check for a new version whenever the app comes back to the screen; reload into it once it's ready
 // (but never in the middle of the one-at-a-time workout view).
 if ("serviceWorker" in navigator) addEventListener("load", () => {
