@@ -547,16 +547,22 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
       <div class="mgrid">
         <div class="field"><label class="label" for="mDate">Date</label><input type="date" id="mDate"></div>
         <div class="field"><label class="label" for="m-waist">Waist at navel</label><input type="number" inputmode="decimal" step="0.25" id="m-waist" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-hips">Hips (glutes)</label><input type="number" inputmode="decimal" step="0.25" id="m-hips" placeholder="in"></div>
         <div class="field"><label class="label" for="m-chest">Chest</label><input type="number" inputmode="decimal" step="0.25" id="m-chest" placeholder="in"></div>
         <div class="field"><label class="label" for="m-shoulders">Shoulders</label><input type="number" inputmode="decimal" step="0.25" id="m-shoulders" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-neck">Neck</label><input type="number" inputmode="decimal" step="0.25" id="m-neck" placeholder="in"></div>
         <div class="field"><label class="label" for="m-armR">Right arm</label><input type="number" inputmode="decimal" step="0.25" id="m-armR" placeholder="in"></div>
         <div class="field"><label class="label" for="m-armL">Left arm</label><input type="number" inputmode="decimal" step="0.25" id="m-armL" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-foreR">Right forearm</label><input type="number" inputmode="decimal" step="0.25" id="m-foreR" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-foreL">Left forearm</label><input type="number" inputmode="decimal" step="0.25" id="m-foreL" placeholder="in"></div>
         <div class="field"><label class="label" for="m-thigh">Right thigh</label><input type="number" inputmode="decimal" step="0.25" id="m-thigh" placeholder="in"></div>
         <div class="field"><label class="label" for="m-thighL">Left thigh</label><input type="number" inputmode="decimal" step="0.25" id="m-thighL" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-calfR">Right calf</label><input type="number" inputmode="decimal" step="0.25" id="m-calfR" placeholder="in"></div>
+        <div class="field"><label class="label" for="m-calfL">Left calf</label><input type="number" inputmode="decimal" step="0.25" id="m-calfL" placeholder="in"></div>
       </div>
       <div class="savebar" style="margin-top:12px"><button class="primary" id="mSave">Log measurements</button><span class="toast" id="mToast" role="status"></span></div>
       <details class="fn" style="margin-top:12px"><summary><span class="label">Where to measure</span><span class="i">Show</span></summary>
-        <dl class="form"><dt>Tape</dt><dd>Flat against the skin and level all the way around, snug enough not to slip but not denting the skin. Measure twice; if they differ, take the average. A mirror helps you keep it level.</dd><dt>Flexed or relaxed</dt><dd>Everything relaxed except the arms. What matters most is doing it the same way every time.</dd><dt>Waist</dt><dd>Around the belly button, standing relaxed, after breathing out normally. Don't suck in.</dd><dt>Chest</dt><dd>Around the nipple line and under the armpits, arms relaxed at your sides, after a normal breath out.</dd><dt>Shoulders</dt><dd>A full loop around the widest part of the shoulders: over the outside bulge of both shoulder muscles in front and across the back, a few inches below the top of the shoulders. Stand tall, arms hanging relaxed. Easiest with a helper; alone, use a mirror to keep the tape level across the back.</dd><dt>Arms</dt><dd>Flexed: bend the elbow, make a fist and squeeze the biceps, then measure around the biggest part. Both arms.</dd><dt>Thighs</dt><dd>Standing, weight on both feet, muscles relaxed, halfway between the hip crease and the top of the kneecap. Both legs: the left leg can lose some size after a heel injury, so tracking both shows if they're evening out.</dd></dl>
+        <dl class="form"><dt>Tape</dt><dd>Flat against the skin and level all the way around, snug enough not to slip but not denting the skin. Measure twice; if they differ, take the average. A mirror helps you keep it level.</dd><dt>Flexed or relaxed</dt><dd>Everything relaxed except the arms. What matters most is doing it the same way every time.</dd><dt>Waist</dt><dd>Around the belly button, standing relaxed, after breathing out normally. Don't suck in.</dd><dt>Chest</dt><dd>Around the nipple line and under the armpits, arms relaxed at your sides, after a normal breath out.</dd><dt>Shoulders</dt><dd>A full loop around the widest part of the shoulders: over the outside bulge of both shoulder muscles in front and across the back, a few inches below the top of the shoulders. Stand tall, arms hanging relaxed. Easiest with a helper; alone, use a mirror to keep the tape level across the back.</dd><dt>Arms</dt><dd>Flexed: bend the elbow, make a fist and squeeze the biceps, then measure around the biggest part. Both arms.</dd><dt>Hips (glutes)</dt><dd>Feet together, around the widest part of your butt, tape level all the way around. This is the one that shows glute growth.</dd><dt>Neck</dt><dd>Just below the Adam's apple, tape angled slightly down toward the front, head level and relaxed. Used with your waist to estimate body fat.</dd><dt>Forearms</dt><dd>Arm hanging straight, hand relaxed and open, around the thickest part just below the elbow.</dd><dt>Thighs</dt><dd>Standing, weight on both feet, muscles relaxed, halfway between the hip crease and the top of the kneecap. Both legs: the left leg can lose some size after a heel injury, so tracking both shows if they're evening out.</dd><dt>Calves</dt><dd>Relaxed, not flexed: standing tall with your weight on both feet evenly, around the widest part of the calf. Both legs, for the same reason as the thighs.</dd></dl>
       </details>
     </div>
     <div class="panel" id="mBody"></div>
@@ -2648,7 +2654,10 @@ $("#wUndo").addEventListener("click", async () => {
 
 /* ---------- MEASUREMENTS ---------- */
 // good: which direction is progress (-1 smaller is better, +1 bigger is better, 0 neutral)
-const MEAS = [["waist","Waist",-1],["chest","Chest",1],["shoulders","Shoulders",1],["armR","Right arm",1],["armL","Left arm",1],["thigh","Right thigh",0],["thighL","Left thigh",0]];
+const MEAS = [["waist","Waist",-1],["hips","Hips (glutes)",1],["chest","Chest",1],["shoulders","Shoulders",1],["neck","Neck",0],["armR","Right arm",1],["armL","Left arm",1],["foreR","Right forearm",1],["foreL","Left forearm",1],["thigh","Right thigh",0],["thighL","Left thigh",0],["calfR","Right calf",0],["calfL","Left calf",0]];
+const HEIGHT_IN = 73; // 6'1"
+// US Navy tape estimate for men: uses waist (at the navel), neck and height. Good for trends, ±3–4% for the exact number.
+const navyBF = (waist, neck) => waist > neck ? 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(HEIGHT_IN) + 36.76 : null;
 let curMeas = "waist";
 function renderMeasures(){
   if (!$("#mDate").value) $("#mDate").value = today();
@@ -2672,7 +2681,13 @@ function renderMeasures(){
     <div style="display:flex;flex-direction:column;gap:14px">
       <h2>Measurement trend</h2>
       <div class="tablebox"><table><thead><tr><th>Inches</th><th class="r">First</th><th class="r">Latest</th><th class="r">Change</th></tr></thead><tbody>${tbl}</tbody></table></div>
-      <p class="sub" style="margin:0">Green means progress: waist down, chest, shoulders and arms up.</p>
+      <p class="sub" style="margin:0">Green means progress: waist down; hips, chest, shoulders, arms and forearms up. Neck, thighs and calves are tracked without a direction; for the legs, watch the left side catch up to the right.</p>
+      ${(() => { const bf = rows.filter(r => num(r.waist) != null && num(r.neck) != null).map(r => ({d:r.date, v:navyBF(num(r.waist), num(r.neck))})).filter(x => x.v != null);
+        const lw = rows.filter(r => num(r.waist) != null).slice(-1)[0];
+        if (!bf.length && !lw) return "";
+        const a = bf[0], z = bf[bf.length-1], wh = lw ? num(lw.waist) / HEIGHT_IN : null;
+        return `<div class="stats two">${z ? `<div class="stat"><div class="label">Est. body fat</div><div class="v">${fmt(z.v,1)}<small>%</small></div><div class="sub">${bf.length > 1 ? `${z.v - a.v > 0 ? "+" : ""}${fmt(z.v - a.v,1)} since ${fDate(a.d)}` : "from waist + neck"}</div></div>` : `<div class="stat"><div class="label">Est. body fat</div><div class="v">–</div><div class="sub">log neck + waist</div></div>`}${wh ? `<div class="stat"><div class="label">Waist ÷ height</div><div class="v">${fmt(wh,2)}</div><div class="sub">${wh < 0.5 ? "healthy range (under 0.50)" : "aim for under 0.50"}</div></div>` : ""}</div>
+          <p class="sub" style="margin:0">Body fat uses the US Navy tape formula. The exact number can be off by a few percent, but the trend is reliable when you measure the same way.</p>`; })()}
       <div class="mtabs" role="group" aria-label="Chart a measurement">${have.map(([k,l]) => `<button type="button" data-meas="${k}" aria-pressed="${k===curMeas}">${l}</button>`).join("")}</div>
       ${lineChart([{pts, color:"var(--accent)", dots:true, width:2.5}], {label:"Measurement over time", minPad:0.5})}
       <div class="tablebox"><table><thead><tr><th>Date</th><th>Logged</th><th></th></tr></thead><tbody>${hist}</tbody></table></div>
@@ -3323,7 +3338,7 @@ renderTimer();
 </script>
 
 <script>
-window.APP_V = 62; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
+window.APP_V = 63; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
 // Check for a new version whenever the app comes back to the screen; reload into it once it's ready
 // (but never in the middle of the one-at-a-time workout view).
 if ("serviceWorker" in navigator) addEventListener("load", () => {
