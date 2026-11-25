@@ -321,6 +321,10 @@ textarea{resize:vertical;line-height:1.4}
 .setctl button:disabled{opacity:.35}
 .ex-foot.chg{border-top:1px solid var(--line);margin-top:6px;padding-top:4px;align-items:center}
 .ex-foot.chg .sp{flex:1}
+.sssplit{display:block;margin-top:4px;padding:4px 0;font-size:13px}
+.addtoday{width:100%;margin:6px 0 10px;border:1px dashed var(--line)}
+.fhr{display:flex;gap:2px;flex:none}
+.keepbar{flex-wrap:wrap;}
 .keepbar{display:flex;align-items:center;gap:8px;margin-top:6px}
 .keepbar button{padding:4px 10px;font-size:13px}
 #addExBtn{width:100%}
@@ -733,7 +737,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
   <div class="fhead">
     <button type="button" class="ghost" id="fClose">☰ List</button>
     <div class="fprog"><b id="fCount"></b><div class="fdots" id="fDots" aria-hidden="true"></div></div>
-    <button type="button" class="ghost" id="fRest"></button>
+    <span class="fhr"><button type="button" class="ghost" id="fAddEx" aria-label="Add an exercise">＋ Add</button><button type="button" class="ghost" id="fRest"></button></span>
   </div>
   <div class="fbody" id="fBody"></div>
   <div class="ffoot" id="fFoot">
@@ -878,6 +882,9 @@ const HOME_MAX = 25; // heaviest dumbbells at home
 function lastWeight(k){ const l = lastFor(k, curDate); return l ? Math.max(0, ...l.sets.map(r => num(r[0]) || 0)) : 0; }
 // A dumbbell exercise you've been doing with more than 25 lb is gym-only for now.
 const tooHeavyHome = k => EX[k].k === "lift" && whereOf(k) === "both" && lastWeight(k) > HOME_MAX;
+// At the gym, favor what you can't do at home: gym-only equipment first, then dumbbell work heavier than your home set.
+const gymRank = k => GYM_ONLY.includes(k) ? 0 : tooHeavyHome(k) ? 1 : 2;
+const byGym = (loc, list) => loc === "gym" ? list.map((k, i) => [k, i]).sort((a, b) => gymRank(a[0]) - gymRank(b[0]) || a[1] - b[1]).map(x => x[0]) : list;
 const altsFor = (base, loc) => (ALTS[base] || []).filter(a => locOK(a, loc));
 // Same main muscle, right place, and not already in today's workout (done or still to come).
 function swapChoices(it){
@@ -886,21 +893,21 @@ function swapChoices(it){
   const inToday = new Set(items().map(x => x[0]));
   const pool = [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]
     .filter(a => a !== base && EX[a].m && EX[a].m[0] === prim && !inToday.has(a) && !hidden.has(a) && locOK(a, loc) && !(loc === "home" && tooHeavyHome(a)));
-  return [...(it[4] && !inToday.has(base) && !hidden.has(base) ? [base] : []), ...pool];
+  return [...(it[4] && !inToday.has(base) && !hidden.has(base) ? [base] : []), ...byGym(loc, pool)];
 }
 // Each item: [exercise, sets, target, flags] · flags: a letter = superset pair, "o" = optional ("If you have time")
 const DAYS = {
   mon:{name:"Full Body A", t:"Mon", loc:"home", d:"Full Body A · home dumbbells", x:[["goblet",3,"12–15","A"],["pushup",3,"near failure","A"],["dbrdl",3,"12–15","B"],["row1",3,"12–15/arm","B"],["bridge",3,"12–15, 2-sec squeeze"],["dbcurl",3,"10–15","C"],["ohdb",3,"10–15","C"],["deadbug",3,"8/side"],["pallof",3,"10/side","o"],["circuit",1,"max rounds","o"]],
-    alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"4 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["dbcurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["deadbug",3,"8/side"],["hipabd",2,"15–20","o"],["incwalk",1,"10 min","o"]]}},
-  tue:{name:"Full Body B", t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"4 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["shpress",3,"8–10","A"],["csrow",3,"10–12","A"],["inccurl",3,"10–12","B"],["ohdb",3,"10–12","B"],["cablecr",3,"12–15"],["hipabd",2,"15–20","o"],["calfst",3,"12–15","o"],["incwalk",1,"15 min","o"]],
+    alt:{loc:"gym", d:"Full Body A · gym", x:[["heelwarm",1,"4 min"],["legpress",3,"10–12"],["chestpress",3,"10–12"],["dbrdl",3,"10–12","A"],["csrow",3,"10–12","A"],["cablecurl",3,"10–12"],["pushdown",3,"10–12"],["deadbug",3,"8/side"],["hipabd",2,"15–20","o"],["incwalk",1,"10 min","o"]]}},
+  tue:{name:"Full Body B", t:"Tue", loc:"gym", d:"Full Body B · squat + pull · gym", x:[["heelwarm",1,"4 min"],["squat",3,"8–10"],["pullup",3,"6–10"],["mshpress",3,"8–10"],["machrow",3,"10–12"],["ccurlh",3,"10–12/arm"],["ohcable",3,"10–12"],["cablecr",3,"12–15"],["hipabd",2,"15–20","o"],["calfse",3,"12–15","o"],["incwalk",1,"15 min","o"]],
     alt:{loc:"home", d:"Full Body B · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["row1",3,"12–15/arm","A"],["shpress",3,"10–15","A"],["dpulldown",3,"12–15"],["dbcurl",3,"10–15","B"],["dpushdown",3,"12–15","B"],["deadbug",3,"8/side"],["bandabd",2,"20–25","o"],["dface",2,"15–20","o"],["calfst",3,"15–20","o"],["walk",1,"20 min","o"]]}},
   wed:{name:"Recovery", t:"Wed", loc:"rest", d:"Recovery · brisk walk, mobility + heel rehab · no lifting", x:[["walk",1,"30–40 min"],["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",2,"1 alphabet"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"]]},
-  thu:{name:"Full Body C", t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"4 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["hammer",3,"8–12","B"],["dbskull",3,"10–12","B"],["hipthrust",3,"8–12"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["kneeraise",3,"10–12","o"]],
+  thu:{name:"Full Body C", t:"Thu", loc:"gym", d:"Full Body C · deadlift + press · gym", x:[["heelwarm",1,"4 min"],["trapdl",3,"5–6"],["dbbench",3,"8–10","A"],["row1",3,"10–12/arm","A"],["ropehammer",3,"10–12"],["tpushbar",3,"10–12"],["hipthrust",3,"8–12"],["run",1,"20 min +3–5/wk"],["pulldown",3,"10–12","o"],["captain",3,"10–12","o"]],
     alt:{loc:"home", d:"Full Body C · home", x:[["heelwarm",1,"4 min"],["dbrdl",3,"10–12"],["dbfloor",3,"12–15","A"],["row1",3,"12–15/arm","A"],["hammer",3,"12–15","B"],["dbskull",3,"12–15","B"],["sbridge",3,"10–15/side"],["abwheel",3,"6–10"],["revcrunch",3,"10–15","o"],["calfst",2,"15–20","o"],["walk",1,"20–30 min","o"]]}},
-  fri:{name:"Full Body D", t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"4 min"],["bss",3,"8–10/leg"],["chestpress",3,"10–12"],["latraise",3,"12–15","A"],["revfly",3,"12–15","A"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["pallofc",2,"10/side"],["cablekick",2,"12–15/side","o"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
+  fri:{name:"Full Body D", t:"Fri", loc:"gym", d:"Full Body D · shoulders + arms · gym", x:[["heelwarm",1,"4 min"],["bss",3,"8–10/leg"],["pinclinew",3,"8–12"],["cablelat",3,"12–15/arm"],["revdeck",3,"12–15"],["ezcurl",3,"10–12","B"],["skull",3,"10–12","B"],["pallofc",2,"10/side"],["cablekick",2,"12–15/side","o"],["facepull",2,"15","o"],["intervals",1,"6–8 rounds","o"]],
     alt:{loc:"home", d:"Full Body D · home", x:[["heelwarm",1,"4 min"],["bss",3,"10–12/leg"],["pushup",3,"near failure","A"],["drow",3,"12–15","A"],["latraise",3,"15–20","B"],["dface",2,"15–20","B"],["dbcurl",3,"10–15","C"],["dohext",3,"12–15","C"],["pallof",2,"10/side"],["bandwalk",2,"10 steps each way","o"],["circuit",1,"max rounds","o"]]}},
   sat:{name:"Arms + core", t:"Sat", loc:"home", d:"Arms + core · home", x:[["dbcurl",3,"10–15","A"],["ohdb",3,"12–15","A"],["hammer",3,"12–15","B"],["dpushdown",3,"12–15","B"],["latraise",3,"15–20"],["pallof",3,"10/side"],["abwheel",3,"6–10"],["plank",3,"30–45 sec","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["walk",1,"20–30 min","o"]],
-    alt:{loc:"gym", d:"Arms + core · gym", x:[["inccurl",3,"10–12","A"],["ohdb",3,"10–12","A"],["hammer",3,"10–12","B"],["dbskull",3,"12–15","B"],["latraise",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
+    alt:{loc:"gym", d:"Arms + core · gym", x:[["mcurl",3,"10–12"],["mtriext",3,"10–12"],["ccurlezn",3,"10–12"],["tpushv",3,"12–15"],["machlat",3,"12–15"],["cablecr",3,"12–15"],["plank",3,"30–45 sec","o"],["birddog",2,"8/side","o"],["sideplank",2,"30 sec","o"],["incwalk",1,"20 min","o"]]}},
   race:{name:"5K race day", t:"Race", loc:"rest", d:"5K race · 9:15 start, check in 8:00 · no lifting", x:[["heelwarm",1,"4 min"],["warmjog",1,"5–10 min easy + 3 short pickups"],["race5k",1,"5K"],["walk",1,"10 min cool-down"],["calfstretch",2,"30 sec each, both legs"]]},
   sun:{name:"Rest + rehab", t:"Sun", loc:"rest", d:"Rest · heel rehab + easy walk · meal prep", x:[["mobility",1,"10 min"],["calfstretch",2,"30 sec each, both legs"],["anklealpha",2,"1 alphabet"],["shortfoot",2,"15"],["bandankle",2,"12 each direction"],["bandevert",2,"12, 2-sec hold"],["balance",3,"30 sec"],["tibraise",2,"15"],["chintuck",2,"10, 5-sec hold"],["walk",1,"20 min, easy","o"]]}
 };
@@ -1255,7 +1262,7 @@ function hiddenSave(){ try { localStorage.setItem(HK, JSON.stringify([...hidden]
 function autoSub(base, p){
   const prim = (EX[base].m || [])[0]; if (!prim || NO_SWAP.includes(prim)) return null;
   const inPlan = new Set(p.x.map(x => x[0]));
-  return [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])].find(a => a !== base && EX[a].m && EX[a].m[0] === prim && !hidApplied.has(a) && !inPlan.has(a) && locOK(a, p.loc)) || null;
+  return byGym(p.loc, [...new Set([...(ALTS[base] || []), ...Object.keys(EX)])]).find(a => a !== base && EX[a].m && EX[a].m[0] === prim && !hidApplied.has(a) && !inPlan.has(a) && locOK(a, p.loc)) || null;
 }
 const itemsOf = (p, sw) => p.x.map(it => {
   if (sw && sw[it[0]] && EX[sw[it[0]]]) return [sw[it[0]], it[1], it[2], it[3] || "", it[0]];
@@ -1264,8 +1271,22 @@ const itemsOf = (p, sw) => p.x.map(it => {
 }).filter(Boolean);
 const baseOf = it => it[4] || it[0];
 // "Do later": move an essential (and its superset partner) to the end of the essentials.
+// Exercises added just for today, and supersets split into straight sets for today.
+let extras = [], split = [];
+function todayRows(){
+  const its = itemsOf(plan(), swaps).slice(), firstOpt = () => { const i = its.findIndex(isOpt); return i < 0 ? its.length : i; };
+  extras.forEach(x => {
+    if (!EX[x.k]) return;
+    const k = swaps[x.k] && EX[swaps[x.k]] ? swaps[x.k] : x.k, row = [k, x.n || 3, x.t || DEF_TARGET[EX[k].k] || "10–12", x.opt ? "o" : ""];
+    if (k !== x.k) row.push(x.k);
+    row._extra = true;
+    const at = x.before ? its.findIndex(r => baseOf(r) === x.before) : -1;
+    its.splice(at >= 0 ? at : x.opt ? its.length : firstOpt(), 0, row);
+  });
+  return its.map(r => { const L = pairOf(r); if (!L || !split.includes(L)) return r; const c = r.slice(); c[3] = (c[3] || "").replace(L, ""); c._split = L; if (r._extra) c._extra = true; return c; });
+}
 function items(){
-  const its = itemsOf(plan(), swaps), ess = its.filter(it => !isOpt(it)), opt = its.filter(isOpt);
+  const its = todayRows(), ess = its.filter(it => !isOpt(it)), opt = its.filter(isOpt);
   const moved = new Set();
   later.forEach(b => { const it = ess.find(x => baseOf(x) === b); if (!it) return; moved.add(b); const L = pairOf(it); if (L) ess.forEach(x => { if (pairOf(x) === L) moved.add(baseOf(x)); }); });
   const order = [...later.flatMap(b => { const it = ess.find(x => baseOf(x) === b); const L = it && pairOf(it); return L ? ess.filter(x => pairOf(x) === L).map(baseOf) : [b]; })];
@@ -1273,11 +1294,11 @@ function items(){
   return [...stay, ...go, ...opt];
 }
 const pairOf = it => (it[3] || "").replace(/o/g, "");
-const isLater = it => { const L = pairOf(it), its = itemsOf(plan(), swaps); const grp = L ? its.filter(x => pairOf(x) === L).map(x => x[4] || x[0]) : [it[4] || it[0]]; return grp.some(g => later.includes(g)); };
+const isLater = it => { const L = pairOf(it), its = todayRows(); const grp = L ? its.filter(x => pairOf(x) === L).map(x => x[4] || x[0]) : [it[4] || it[0]]; return grp.some(g => later.includes(g)); };
 
 /* unsaved work is kept on this device until you save */
 const DK = () => "leancut-draft-" + sid() + "-" + plan().loc;
-function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({run: mode === "run", sets:draft, done, swaps, later, notes, note:wnote, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
+function draftSave(){ try { localStorage.setItem(DK(), JSON.stringify({run: mode === "run", sets:draft, done, swaps, later, extras, split, notes, note:wnote, dur:$("#dur").value, t:Date.now()})); } catch(e){} }
 function draftLoad(){ try { return JSON.parse(localStorage.getItem(DK()) || "null"); } catch(e){ return null; } }
 function draftClear(){ try { Object.keys(localStorage).filter(k => k.startsWith("leancut-draft-" + sid())).forEach(k => localStorage.removeItem(k)); } catch(e){} }
 function markDirty(){ if (mode !== "run") return; dirty = true; draftSave(); }
@@ -1352,8 +1373,9 @@ function buildDraft(){
   const useLocal = !!(local && local.sets && (!savedHere || local.t > (savedHere.savedAt || 0)));
   draft = {}; done = {}; hints = {}; prevBest = {};
   const src = useLocal ? local : savedHere; swaps = src && src.swaps ? {...src.swaps} : {}; later = src && Array.isArray(src.later) ? [...src.later] : [];
+  extras = src && Array.isArray(src.extras) ? src.extras.map(x => ({...x})) : []; split = src && Array.isArray(src.split) ? [...src.split] : [];
   notes = src && src.notes ? {...src.notes} : {}; wnote = src && src.note ? src.note : ""; noteOpen = new Set();
-  itemsOf(p, swaps).forEach(([k,n]) => {
+  todayRows().forEach(([k,n]) => {
     const w = KUNIT[EX[k].k].length;
     const have = useLocal ? local.sets[k] : savedHere && savedHere.sets && savedHere.sets[k];
     draft[k] = have ? have.map(r => r.slice()) : Array.from({length:n}, () => Array(w).fill(""));
@@ -1469,6 +1491,8 @@ function exCard(it){
       ${L ? "" : `<div class="setctl"><button type="button" class="ghost" data-rm="${k}"${draft[k].length > 1 ? "" : " disabled"} aria-label="Remove a set">− Set</button>${last ? `<button type="button" class="ghost" data-copy="${k}">Copy last</button>` : "<span></span>"}<button type="button" class="ghost" data-add="${k}" aria-label="Add a set">+ Set</button></div>`}
       ${L ? (notes[k] ? `<p class="exnote-ro">📝 ${esc(notes[k])}</p>` : "") : (notes[k] || noteOpen.has(k)) ? `<textarea class="exnote" data-note="${k}" rows="2" placeholder="Note: how it felt, why you stopped, what to change…" aria-label="Note for ${esc(e.n)}">${esc(notes[k] || "")}</textarea>` : ""}
       ${!L && rnoteOf(base) ? `<p class="lastnote">📌 ${esc(rnoteOf(base))}</p>` : ""}
+      ${!L && it._split ? `<div class="keepbar"><span class="sub">Split from superset ${it._split} for today.</span><button type="button" class="ghost" data-rejoin="${it._split}">Rejoin</button><button type="button" class="ghost" data-keepsplit="${it._split}">📌 Keep split</button></div>` : ""}
+      ${!L && it._extra ? `<div class="keepbar"><span class="sub">Added for today.</span><button type="button" class="ghost" data-keepextra="${base}">📌 Add to ${esc(DAYS[curDay].name)}</button><button type="button" class="ghost danger" data-rmextra="${base}">✕ Remove</button></div>` : ""}
       ${L ? "" : (() => { const sw = !canSwap ? "" : choices.length ? `<button type="button" class="ghost" data-swap="${base}" aria-expanded="${swapOpen===base}">⇄ Swap</button>` : `<button type="button" class="ghost" disabled title="Every other ${esc(MUSCLE_NAME[prim] || "")} exercise is already in today's workout">⇄ No swaps left</button>`;
         const kSwap = it[4] && swaps[it[4]] ? `<button type="button" class="ghost" data-keep="${it[4]}">📌 Keep this swap in ${DAYS[curDay].name}</button>` : "";
         const kSets = !it[4] && draft[k].length !== n && plan().x.some(r => r[0] === k) ? `<button type="button" class="ghost" data-keepsets="${k}" data-n="${draft[k].length}">📌 Keep ${draft[k].length} sets in ${DAYS[curDay].name}</button>` : "";
@@ -1478,7 +1502,13 @@ function exCard(it){
       ${L ? "" : swapHtml}
     </div>`;
 }
-let addAs = "main";
+let addAs = "main", cxReturn = null;
+function addToday(k, where, before){
+  extras.push({k, before: where === "before" ? before : null, opt: where === "opt"});
+  if (mode !== "run") { mode = "run"; modeSet = true; }
+  markDirty(); draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false);
+  toast(focus.open ? $("#fToast") : $("#logToast"), `${EX[k].n} added for today.`);
+}
 /* ---------- exercise picker: full list with filters (swap, replace in routine, add to routine) ---------- */
 const pk = {mode:null, base:null, q:"", loc:new Set(), mus:new Set(), eq:new Set()};
 function openPicker(mode, base){
@@ -1487,8 +1517,9 @@ function openPicker(mode, base){
   pk.loc = new Set(loc ? [loc] : ["gym","home"]);
   pk.mus = new Set(base && EX[base].m ? [EX[base].m[0]] : []);
   pk.eq = new Set();
-  $("#pkQ").value = ""; $("#pkTitle").textContent = mode === "add" ? "Add an exercise" : mode === "swap" ? "Swap " + EX[items().find(it => baseOf(it) === base)[0]].n : "Replace " + EX[base].n;
-  $("#pkSub").textContent = mode === "add" ? `To ${DAYS[curDay].name}${DAYS[curDay].alt ? " (" + LOCNAME[p.loc] + ")" : ""}` : mode === "swap" ? "Just for today. Logged under the new exercise." : `In your ${DAYS[curDay].name} routine`;
+  if (mode === "today") { const cur = focus.open ? fCurrent() : null; pk.before = cur && !cur.opt ? cur.id : null; pk.where = pk.before ? "before" : "end"; }
+  $("#pkQ").value = ""; $("#pkTitle").textContent = mode === "today" ? "Add an exercise for today" : mode === "add" ? "Add an exercise" : mode === "swap" ? "Swap " + EX[items().find(it => baseOf(it) === base)[0]].n : "Replace " + EX[base].n;
+  $("#pkSub").textContent = mode === "today" ? "Just this workout. You can keep it in the routine afterward." : mode === "add" ? `To ${DAYS[curDay].name}${DAYS[curDay].alt ? " (" + LOCNAME[p.loc] + ")" : ""}` : mode === "swap" ? "Just for today. Logged under the new exercise." : `In your ${DAYS[curDay].name} routine`;
   $("#picker").hidden = false; document.body.classList.add("picking"); renderPicker();
 }
 function closePicker(){ $("#picker").hidden = true; document.body.classList.remove("picking"); pk.mode = null; }
@@ -1505,7 +1536,7 @@ function renderPicker(){
   const inToday = new Set(items().map(x => x[0]).concat(pk.mode === "add" || pk.mode === "replace" ? plan().x.map(x => x[0]) : []));
   const pool = Object.keys(EX).filter(k => EX[k].m && !NO_SWAP.includes(EX[k].m[0]) && !hidden.has(k) && !inToday.has(k) && k !== pk.base);
   const chip = (attr, v, label, on) => `<button type="button" data-${attr}="${v}" aria-pressed="${on}">${esc(label)}</button>`;
-  $("#pkAs").innerHTML = pk.mode === "add" ? `<span class="label">Add as</span>` + chip("pkas", "main", "Main", addAs === "main") + chip("pkas", "opt", "If you have time", addAs === "opt") : "";
+  $("#pkAs").innerHTML = pk.mode === "today" ? `<span class="label">Put it</span>` + (pk.before ? chip("pkwhere", "before", "Before " + EX[(items().find(x => baseOf(x) === pk.before) || [pk.before])[0]].n, pk.where === "before") : "") + chip("pkwhere", "end", "After the main ones", pk.where === "end") + chip("pkwhere", "opt", "If you have time", pk.where === "opt") : pk.mode === "add" ? `<span class="label">Add as</span>` + chip("pkas", "main", "Main", addAs === "main") + chip("pkas", "opt", "If you have time", addAs === "opt") : "";
   $("#pkLoc").innerHTML = `<span class="label">Where</span>` + chip("pkloc", "gym", "Gym", pk.loc.has("gym")) + chip("pkloc", "home", "Home", pk.loc.has("home"));
   const muses = LIB_ORDER.filter(g => !NO_SWAP.includes(g) && Object.keys(EX).some(k => EX[k].m && EX[k].m[0] === g));
   $("#pkMus").innerHTML = `<span class="label">Muscle</span>` + chip("pkmus", "", "All", !pk.mus.size) + muses.map(g => chip("pkmus", g, LIB_NAME[g], pk.mus.has(g))).join("");
@@ -1517,12 +1548,13 @@ function renderPicker(){
   // Swapping back to the planned exercise comes first.
   if (pk.mode === "swap") { const it = items().find(x => baseOf(x) === pk.base); if (it && it[4] && !hidden.has(pk.base)) html += `<h3>Original</h3>` + row(pk.base, "pkback").replace("<b>", "<b>Back to "); }
   // Best matches first when the main muscle filter is on.
-  const pref = pk.base ? (ALTS[pk.base] || []).filter(k => ks.includes(k)).slice(0, 4) : [];
+  const pref = pk.base ? byGym(plan().loc, (ALTS[pk.base] || []).concat(ks.filter(k => GYM_ONLY.includes(k)))).filter((k, i, a) => ks.includes(k) && a.indexOf(k) === i).slice(0, 4) : [];
   if (pref.length) html += `<h3>Best matches</h3>` + pref.map(k => row(k)).join("");
   const rest = ks.filter(k => !pref.includes(k));
-  LIB_ORDER.forEach(g => { const gs = rest.filter(k => EX[k].m[0] === g).sort((a,b) => EX[a].n.localeCompare(EX[b].n)); if (gs.length) html += `<h3>${LIB_NAME[g]}</h3>` + gs.map(k => row(k)).join(""); });
+  const gymFirst = pk.loc.has("gym") && !pk.loc.has("home") || (pk.loc.has("gym") && plan().loc === "gym");
+  LIB_ORDER.forEach(g => { const gs = rest.filter(k => EX[k].m[0] === g).sort((a,b) => (gymFirst ? gymRank(a) - gymRank(b) : 0) || EX[a].n.localeCompare(EX[b].n)); if (gs.length) html += `<h3>${LIB_NAME[g]}</h3>` + gs.map(k => row(k)).join(""); });
   if (!ks.length) html += `<p class="empty">Nothing matches these filters. Try turning one off.</p>`;
-  if (pk.mode === "add") html += `<button type="button" class="ghost" data-gocreate="1" style="margin-top:10px">＋ Not listed? Create a new exercise</button>`;
+  if (pk.mode === "add" || pk.mode === "today") html += `<button type="button" class="ghost" data-gocreate="1" style="margin-top:10px">＋ Not listed? Create a new exercise</button>`;
   $("#pkList").innerHTML = html;
   $("#pkSub").dataset.n = ks.length;
 }
@@ -1532,13 +1564,15 @@ $("#picker").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return; const d = b.dataset;
   const tog = (set, v) => { if (!v) set.clear(); else set.has(v) ? set.delete(v) : set.add(v); };
   if (d.pkas) { addAs = d.pkas; renderPicker(); return; }
+  if (d.pkwhere) { pk.where = d.pkwhere; renderPicker(); return; }
   if (d.pkloc) { tog(pk.loc, d.pkloc); if (!pk.loc.size) pk.loc.add(d.pkloc === "gym" ? "home" : "gym"); renderPicker(); return; }
   if (d.pkmus != null) { tog(pk.mus, d.pkmus); renderPicker(); return; }
   if (d.pkeq != null) { tog(pk.eq, d.pkeq); renderPicker(); return; }
-  if (d.gocreate) { const q = $("#pkQ").value.trim(); closePicker(); location.hash = "progress"; setTimeout(() => { $("#libBox").open = true; cxOpen(); $("#cxName").value = q; $("#cxForm").scrollIntoView({block:"start"}); }, 50); return; }
+  if (d.gocreate) { const q = $("#pkQ").value.trim(); cxReturn = pk.mode === "today" ? {where:pk.where, before:pk.before, focus:focus.open, date:curDate} : null; if (focus.open) { focusClose(); } closePicker(); location.hash = "progress"; setTimeout(() => { $("#libBox").open = true; cxOpen(); $("#cxName").value = q; $("#cxForm").scrollIntoView({block:"start"}); }, 50); return; }
   if (d.pkpick) {
     const k = d.pkpick, base = pk.base, mode = pk.mode; closePicker();
     if (mode === "swap") { if (k === base) delete swaps[base]; else swaps[base] = k; draftSave(); dirty = false; buildDraft(); renderExList(); feedback(false); }
+    else if (mode === "today") { addToday(k, pk.where, pk.before); }
     else if (mode === "replace") { editPlan(x => { const r = x.find(r => r[0] === base); if (r) r[0] = k; }); toast($("#edToast"), `${EX[k].n} replaces ${EX[base].n}.`); buzz(false); }
     else { editPlan(x => { const row = [k, EX[k].k === "min" || EX[k].k === "steps" ? 1 : 3, DEF_TARGET[EX[k].k] || "10–12", addAs === "opt" ? "o" : ""];
         if (addAs === "opt") x.push(row); else { const i = x.findIndex(r => /o/.test(r[3] || "")); i < 0 ? x.push(row) : x.splice(i, 0, row); } });
@@ -1610,7 +1644,7 @@ function renderExList(){
     const its = itemsOf(plan(), {}), ess = its.filter(it => !isOpt(it)), opt = its.filter(isOpt), openSet = new Set([...document.querySelectorAll("#exList details[open]")].map(d => d.id));
     const grp = list => { let out = "", i = 0; while (i < list.length) { const L = pairOf(list[i]); if (!L) { out += planCard(list[i]); i++; continue; }
       const g = []; while (i < list.length && pairOf(list[i]) === L) { g.push(Object.assign(list[i].slice(), {_n: g.length + 1})); i++; }
-      out += `<div class="ss"><div class="sshead"><span class="pair">${L}</span><b>Superset ${L}</b></div>${g.map(planCard).join("")}</div>`; } return out; };
+      out += `<div class="ss"><div class="sshead"><span class="pair">${L}</span><b>Superset ${L}</b>${mode === "edit" ? `<button type="button" class="ghost sssplit" data-esplit="${L}">↔ Split for good</button>` : ""}</div>${g.map(planCard).join("")}</div>`; } return out; };
     const head = mode === "edit"
       ? `<div class="modebar edit"><span><b>✎ Editing ${DAYS[curDay].name}${DAYS[curDay].alt ? " (" + LOCNAME[plan().loc] + ")" : ""}</b><span class="sub">Changes are saved as you go.</span></span><button type="button" class="primary" data-mode="done">✓ Done</button></div>`
       : `<div class="modebar"><span class="sub">Viewing the routine. Start or log a workout to fill in sets.</span><button type="button" class="ghost" data-mode="edit">✎ Edit routine</button></div>`;
@@ -1630,7 +1664,7 @@ function renderExList(){
       const L = pairOf(list[i]);
       if (!L) { out += exCard(list[i]); i++; continue; }
       const g = []; while (i < list.length && pairOf(list[i]) === L) { g.push(Object.assign(list[i].slice(), {_n: g.length + 1})); i++; }
-      out += `<div class="ss"><div class="sshead"><span class="pair">${L}</span><b>Superset ${L}</b><span class="sub">One set of each, back to back, then rest ~60 sec. Repeat for every set.</span></div>${g.map(exCard).join("")}</div>`;
+      out += `<div class="ss"><div class="sshead"><span class="pair">${L}</span><b>Superset ${L}</b><span class="sub">One set of each, back to back, then rest ~60 sec. Repeat for every set.</span>${wkLocked() ? "" : `<button type="button" class="ghost sssplit" data-split="${L}">↔ Split into regular sets</button>`}</div>${g.map(exCard).join("")}</div>`;
     }
     return out;
   };
@@ -1640,6 +1674,7 @@ function renderExList(){
   if (focus.open) { $("#exList").innerHTML = ""; renderFocus(group); }
   else $("#exList").innerHTML = (L ? "" : `<div class="modebar"><span class="sub">Logging this workout.</span><button type="button" class="ghost" data-mode="edit">✎ Edit routine</button></div>`) + (L ? `<div class="lockban"><span>🔒 <b>Workout finished and saved.</b> Fields are locked so nothing changes by accident.</span><button type="button" class="ghost" data-unlock="1">✎ Edit</button></div>` : "") + (hasPairs ? `<p class="sub pairnote">Boxed exercises are supersets: alternate between the two, then rest. Letters only show the order (A, then B). Everything else is done on its own with normal rest.</p>` : "") +
     group(ess) +
+    (L ? "" : `<button type="button" class="ghost addtoday" data-addtoday="1">＋ Add an exercise for today</button>`) +
     (opt.length ? `<div class="opthead"><h3>If you have time</h3><span class="sub">~${r5(opt.reduce((a,it) => a + itemMin(it), 0))} min · fine to skip on busy days</span></div>` + group(opt) : "");
   openSet.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
   const doneEss = ess.filter(([k]) => done[k].length && done[k].every(Boolean)).length;
@@ -1703,6 +1738,7 @@ function setReady(k, i){ const r = draft[k][i]; return (EX[k].k === "lift" ? (["
 function planBlocks(x){ const out = []; x.forEach(r => { const L = (r[3] || "").replace(/o/g, ""), last = out[out.length-1]; if (L && last && last.L === L) last.rows.push(r); else out.push({L, opt:/o/.test(r[3] || ""), rows:[r]}); }); return out; }
 function editClick(b){
   const d = b.dataset;
+  if (d.esplit) { const L = d.esplit; editPlan(x => x.forEach(r => { if (((r[3] || "").replace(/o/g, "")) === L) r[3] = (r[3] || "").replace(L, ""); })); toast($("#edToast"), `Superset ${L} is now regular sets.`); buzz(false); return; }
   if (d.swapall) { swapAll = d.swapall; renderExList(); return; }
   if (d.swap) { openPicker("replace", d.swap); return; }
   if (d.epick) { const k = d.epick, alt = d.alt; editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[0] = alt; }); swapOpen = null; renderExList(); toast($("#edToast"), `${EX[alt].n} replaces ${EX[k].n}.`); buzz(false); return; }
@@ -1736,6 +1772,16 @@ const exClick = e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.mode) { setMode(b.dataset.mode === "done" ? (prevMode === "edit" ? "view" : prevMode) : b.dataset.mode); return; }
   if (mode === "edit") { editClick(b); return; }
+  if (b.dataset.split) { split.push(b.dataset.split); markDirty(); renderExList(); buzz(false); toast($("#logToast"), `Superset ${b.dataset.split} split: do all sets of one, then the other.`); return; }
+  if (b.dataset.rejoin) { split = split.filter(x => x !== b.dataset.rejoin); markDirty(); renderExList(); buzz(false); return; }
+  if (b.dataset.keepsplit) { const L = b.dataset.keepsplit; split = split.filter(x => x !== L); editPlan(x => x.forEach(r => { if (((r[3] || "").replace(/o/g, "")) === L) r[3] = (r[3] || "").replace(L, ""); })); toast($("#logToast"), `Superset ${L} is now regular sets in ${DAYS[curDay].name}.`); return; }
+  if (b.dataset.rmextra) { const k = b.dataset.rmextra; extras = extras.filter(x => x.k !== k); delete swaps[k]; draftSave(); dirty = false; buildDraft(); renderExList(); buzz(false); return; }
+  if (b.dataset.keepextra) { const k = b.dataset.keepextra, x0 = extras.find(x => x.k === k); if (!x0) return;
+    extras = extras.filter(x => x !== x0);
+    editPlan(x => { const row = [k, x0.n || 3, x0.t || DEF_TARGET[EX[k].k] || "10–12", x0.opt ? "o" : ""], at = x0.before ? x.findIndex(r => r[0] === x0.before) : -1;
+      if (at >= 0) x.splice(at, 0, row); else if (x0.opt) x.push(row); else { const i = x.findIndex(r => /o/.test(r[3] || "")); i < 0 ? x.push(row) : x.splice(i, 0, row); } });
+    toast($("#logToast"), `${EX[k].n} is now part of ${DAYS[curDay].name}.`); feedback(false); return; }
+  if (b.dataset.addtoday) { openPicker("today"); return; }
   if (b.dataset.keepsets) { const k = b.dataset.keepsets, n = +b.dataset.n; editPlan(x => { const r = x.find(r => r[0] === k); if (r) r[1] = n; }); toast($("#logToast"), `${EX[k].n}: ${n} sets in ${DAYS[curDay].name} from now on.`); feedback(false); return; }
   if (b.dataset.unlock) { unlocked = true; renderExList(); feedback(false); return; }
   if (wkLocked() || b.disabled) return;
@@ -1843,7 +1889,7 @@ async function saveWorkout(){
   if (minutes == null && tm && tm.date === curDate) minutes = timerMinutes(tm);
   $("#saveBtn").disabled = true;
   try {
-    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, later:[...later], notes:Object.fromEntries(Object.entries(notes).filter(([k,v]) => v && v.trim() && sets[k])), note:wnote.trim(), minutes: minutes ?? "", savedAt:Date.now()});
+    await putSession(sid(), {date:curDate, day:curDay, loc:plan().loc, sets, done:doneOut, swaps:{...swaps}, later:[...later], extras:extras.map(x => ({...x})), split:[...split], notes:Object.fromEntries(Object.entries(notes).filter(([k,v]) => v && v.trim() && sets[k])), note:wnote.trim(), minutes: minutes ?? "", savedAt:Date.now()});
     if (tm && tm.date === curDate) timerSet(null);
     draftClear(); dirty = false; unlocked = false; toast($("#logToast"), minutes ? `Saved · ${minutes} min` : "Saved"); renderLog(); renderTimer();
   }
@@ -2014,6 +2060,7 @@ function restAfter(k){
   $("#cdName").textContent = "Rest"; renderCd(); renderTimer();
 }
 $("#fClose").addEventListener("click", focusClose);
+$("#fAddEx").addEventListener("click", () => openPicker("today"));
 $("#fLater").addEventListener("click", fLater);
 $("#fDone").addEventListener("click", fDone);
 $("#fBody").addEventListener("input", e => { if (e.target.id === "fNote") { wnote = e.target.value; return; } exInputH(e); });
@@ -3406,6 +3453,7 @@ $("#cxForm").addEventListener("submit", e => {
   const c = {n, k:$("#cxKind").value, m:$("#cxMain").value, also:[...cxAlso], eq:$("#cxEq").value, eqAlso:[...cxEqAlso], where:$("#cxWhere").value, how:$("#cxHow").value.trim()};
   if (cxEditing && customEx[k] && customEx[k].k !== c.k && sortedSessions().some(([,s]) => s.sets && s.sets[k])) c.k = customEx[k].k; // keep logged data readable
   customEx[k] = c; customSave(); applyCustom(k, c); cxClose(); feedback(false);
+  if (cxReturn && cxReturn.date === curDate) { const r = cxReturn; cxReturn = null; location.hash = "log"; setTimeout(() => { addToday(k, r.where, r.before); if (r.focus) focusOpen(); }, 60); return; }
   $("#libQ").value = ""; libEq = ""; renderLib(); renderProgress && renderProgress();
   const row = document.querySelector(`[data-lib="${k}"]`); if (row) row.scrollIntoView({block:"center", behavior:"smooth"});
   toast($("#bkToast"), "");
@@ -3420,7 +3468,7 @@ renderTimer();
 </script>
 
 <script>
-window.APP_V = 66; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
+window.APP_V = 68; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
 // Check for a new version whenever the app comes back to the screen; reload into it once it's ready
 // (but never in the middle of the one-at-a-time workout view).
 if ("serviceWorker" in navigator) addEventListener("load", () => {
