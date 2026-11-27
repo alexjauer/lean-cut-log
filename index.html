@@ -100,6 +100,13 @@ body.picking{overflow:hidden}
 .pklist h3{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .pklist button.pkit{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;padding:9px 12px;margin-bottom:6px}
 .pklist button.pkit span{font-size:12px;color:var(--muted)}
+.formfig.nofig{justify-content:center}
+.formfig.nofig .bmap{max-width:200px;margin:0 auto}
+.pkrowx{display:flex;gap:6px;align-items:stretch;margin-bottom:6px}
+.pkrowx .pkit{flex:1;min-width:0;margin-bottom:0!important}
+.pkinfo{flex:none;width:44px;padding:0;font-size:18px}
+.pkrowx.open .pkit,.pkrowx.open .pkinfo{border-color:var(--accent)}
+.pkprev{border:1px solid var(--accent);border-radius:12px;padding:10px 12px;margin:-2px 0 10px}
 .pklist .pkback{border-color:var(--accent)}
 .focus{position:fixed;inset:0;z-index:8;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 body.focusing{overflow:hidden}
@@ -1513,7 +1520,7 @@ function addToday(k, where, before){
 const pk = {mode:null, base:null, q:"", loc:new Set(), mus:new Set(), eq:new Set()};
 function openPicker(mode, base){
   const p = plan(), loc = p.loc === "rest" ? "" : p.loc;
-  Object.assign(pk, {mode, base:base || null, q:""});
+  Object.assign(pk, {mode, base:base || null, q:"", info:null});
   pk.loc = new Set(loc ? [loc] : ["gym","home"]);
   pk.mus = new Set(base && EX[base].m ? [EX[base].m[0]] : []);
   pk.eq = new Set();
@@ -1543,7 +1550,10 @@ function renderPicker(){
   const eqs = Object.keys(EQ_NAME).filter(q => Object.keys(EX).some(k => (EX[k].eq || []).includes(q)));
   $("#pkEq").innerHTML = `<span class="label">Type</span>` + chip("pkeq", "", "All", !pk.eq.size) + eqs.map(q => chip("pkeq", q, EQ_NAME[q], pk.eq.has(q))).join("");
   const ks = pool.filter(pkPass);
-  const row = (k, cls = "") => `<button type="button" class="pkit ${cls}" data-pkpick="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}</span></button>`;
+  // Each option has an ⓘ button that previews the exercise (animation, muscles, how-to, your history) without choosing it.
+  const row = (k, cls = "") => { const open = pk.info === k, last = lastFor(k, curDate);
+    return `<div class="pkrowx ${open ? "open" : ""}"><button type="button" class="pkit ${cls}" data-pkpick="${k}"><b>${esc(EX[k].n)}</b><span>${esc(MUSCLE[k] || "")} · ${esc(eqText(k))} · ${WHERE_TXT[whereOf(k)]}</span></button><button type="button" class="ghost pkinfo" data-pkinfo="${k}" aria-expanded="${open}" aria-label="${open ? "Hide" : "Preview"} ${esc(EX[k].n)}">${open ? "✕" : "ⓘ"}</button></div>` +
+      (open ? `<div class="pkprev">${formHtml(k) || `<p class="sub">No how-to notes for this one yet.</p>`}<p class="sub" style="margin:8px 0">${last ? `Last time (${fDate(last.date)}): <b class="num">${esc(setsText(k, last.sets))}</b>` : "You haven't logged this one yet."}</p><button type="button" class="primary" data-pkpick="${k}" style="width:100%">Choose ${esc(EX[k].n)}</button></div>` : ""); };
   let html = "";
   // Swapping back to the planned exercise comes first.
   if (pk.mode === "swap") { const it = items().find(x => baseOf(x) === pk.base); if (it && it[4] && !hidden.has(pk.base)) html += `<h3>Original</h3>` + row(pk.base, "pkback").replace("<b>", "<b>Back to "); }
@@ -1565,6 +1575,8 @@ $("#picker").addEventListener("click", e => {
   const tog = (set, v) => { if (!v) set.clear(); else set.has(v) ? set.delete(v) : set.add(v); };
   if (d.pkas) { addAs = d.pkas; renderPicker(); return; }
   if (d.pkwhere) { pk.where = d.pkwhere; renderPicker(); return; }
+  if (d.pkinfo) { const k = d.pkinfo, list = $("#pkList"), top = list.scrollTop; pk.info = pk.info === k ? null : k; renderPicker(); list.scrollTop = top; buzz(false);
+    if (pk.info) { const pv = list.querySelector(".pkprev"); if (pv) pv.scrollIntoView({block:"nearest", behavior:"smooth"}); if (!animRaf && !reduceMotion()) animRaf = requestAnimationFrame(animTick); } return; }
   if (d.pkloc) { tog(pk.loc, d.pkloc); if (!pk.loc.size) pk.loc.add(d.pkloc === "gym" ? "home" : "gym"); renderPicker(); return; }
   if (d.pkmus != null) { tog(pk.mus, d.pkmus); renderPicker(); return; }
   if (d.pkeq != null) { tog(pk.eq, d.pkeq); renderPicker(); return; }
@@ -3304,13 +3316,13 @@ function bodyMap(k){
   return side("front") + side("back");
 }
 function formFig(k){
-  if (!animDef(k)) return "";
+  if (!animDef(k)) return MUSCLE[k] ? `<div class="formfig nofig"><div class="bmap" role="img" aria-label="Muscles worked: ${esc(MUSCLE[k] || "")}">${bodyMap(k)}</div></div>` : "";
   return `<div class="formfig"><div class="anim" data-anim="${k}" role="img" aria-label="${esc(EX[k].n)}: movement from start to end position"><svg viewBox="0 0 120 100">${figSVG(k, 1, 0)}</svg></div><div class="bmap" role="img" aria-label="Muscles worked: ${esc(MUSCLE[k] || "")}">${bodyMap(k)}</div></div>`;
 }
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 let animRaf = null;
 function animTick(ts){
-  const els = [...document.querySelectorAll("details[open] .anim")];
+  const els = [...document.querySelectorAll("details[open] .anim, .pkprev .anim")];
   els.forEach(el => {
     const k = el.dataset.anim, d = animDef(k); if (!d) return;
     const per = (d.per || 2.2) * 1000, t = (ts % per) / per;
@@ -3468,7 +3480,7 @@ renderTimer();
 </script>
 
 <script>
-window.APP_V = 68; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
+window.APP_V = 70; try { document.getElementById("appVer").textContent = "App version " + window.APP_V; } catch(e) {}
 // Check for a new version whenever the app comes back to the screen; reload into it once it's ready
 // (but never in the middle of the one-at-a-time workout view).
 if ("serviceWorker" in navigator) addEventListener("load", () => {
